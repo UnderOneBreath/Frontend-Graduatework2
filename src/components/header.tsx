@@ -9,8 +9,11 @@ export default function Header() {
 					<Link to="/">
 						<Button variant="ghost">Главная</Button>
 					</Link>
+					<Link to="/profile">
+						<Button variant="ghost">Профиль</Button>
+					</Link>
 					<Link to="/login">
-						<Button variant="ghost">Войти</Button>
+						<Button variant="default">Войти</Button>
 					</Link>
 				</div>
 			</div>
