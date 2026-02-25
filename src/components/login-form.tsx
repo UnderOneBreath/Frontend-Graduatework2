@@ -14,7 +14,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Link } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function LoginForm({
 	className,
@@ -59,7 +59,13 @@ export function LoginForm({
 									Войти через Google
 								</Button>
 								<FieldDescription className="text-center">
-									Нет аккаунта? <a href="/SignUp">Зарегистрироваться</a>
+									Нет аккаунта?{" "}
+									<Link
+										to="/SignUp"
+										className="underline-offset-4 hover:underline"
+									>
+										Зарегистрироваться
+									</Link>
 								</FieldDescription>
 							</Field>
 						</FieldGroup>

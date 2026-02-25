@@ -13,6 +13,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 	return (
@@ -59,14 +60,28 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 								Пожалуйста, подтвердите ваш пароль.
 							</FieldDescription>
 						</Field>
+						<Field>
+							<FieldLabel htmlFor="phone">Номер телефона</FieldLabel>
+							<Input
+								id="phone"
+								type="tel"
+								placeholder="+7 (999) 000-00-00"
+							/>
+						</Field>
 						<FieldGroup>
 							<Field>
 								<Button type="submit">Создать аккаунт</Button>
-								<Button variant="outline" type="button">
+								{/* <Button variant="outline" type="button">
 									Зарегистрироваться через Google
-								</Button>
+								</Button> */}
 								<FieldDescription className="px-6 text-center">
-									Уже есть аккаунт? <a href="/Login">Войти</a>
+									Уже есть аккаунт?{" "}
+									<Link
+										to="/Login"
+										className="underline-offset-4 hover:underline"
+									>
+										Войти
+									</Link>
 								</FieldDescription>
 							</Field>
 						</FieldGroup>
