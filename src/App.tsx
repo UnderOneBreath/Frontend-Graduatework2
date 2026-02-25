@@ -12,6 +12,7 @@ function App() {
 				<Routes>
 					<Route path="/" element={<Pages.PageMain />} />
 					<Route path="/login" element={<Pages.Login />} />
+					<Route path="/signup" element={<Pages.SignUp />} />
 				</Routes>
 			</Router>
 		</>
