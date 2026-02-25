@@ -24,7 +24,7 @@ export function LoginForm({
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
 			<Card>
 				<CardHeader>
-					<CardTitle>Войдите в свой аккаунт</CardTitle>
+					<CardTitle className="text-2xl">Войдите в свой аккаунт</CardTitle>
 					<CardDescription>
 						Введите свой адрес электронной почты для входа в аккаунт
 					</CardDescription>
@@ -55,9 +55,9 @@ export function LoginForm({
 							</Field>
 							<Field>
 								<Button type="submit">Войти</Button>
-								<Button variant="outline" type="button">
+								{/* <Button variant="outline" type="button">
 									Войти через Google
-								</Button>
+								</Button> */}
 								<FieldDescription className="text-center">
 									Нет аккаунта?{" "}
 									<Link

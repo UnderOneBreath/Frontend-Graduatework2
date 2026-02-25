@@ -19,14 +19,14 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 	return (
 		<Card {...props}>
 			<CardHeader>
-				<CardTitle>Создать аккаунт</CardTitle>
+				<CardTitle className="text-2xl">Создать аккаунт</CardTitle>
 				<CardDescription>
 					Введите вашу информацию ниже, чтобы создать аккаунт
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<form>
-					<FieldGroup>
+					<FieldGroup className="gap-5">
 						<Field>
 							<FieldLabel htmlFor="name">Имя пользователя</FieldLabel>
 							<Input id="name" type="text" placeholder="Иван Иванов" required />
@@ -39,7 +39,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 								placeholder="example@mail.com"
 								required
 							/>
-							<FieldDescription className="">
+							<FieldDescription>
 								Мы используем это для связи с вами. Мы не будем делиться вашей
 								электронной почтой с кем-либо.
 							</FieldDescription>
@@ -62,11 +62,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 						</Field>
 						<Field>
 							<FieldLabel htmlFor="phone">Номер телефона</FieldLabel>
-							<Input
-								id="phone"
-								type="tel"
-								placeholder="+7 (999) 000-00-00"
-							/>
+							<Input id="phone" type="tel" placeholder="+7 (999) 000-00-00" />
 						</Field>
 						<FieldGroup>
 							<Field>
