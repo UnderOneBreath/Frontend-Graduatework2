@@ -1,14 +1,21 @@
 import "tailwindcss";
-import '@/index.css'
+import "@/index.css";
 import Header from "@/components/header";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import * as Pages from "@/pages";
 
 function App() {
-  return (
-    <>
-      <Header></Header>
-    </>
-  )
+	return (
+		<>
+			<Router>
+				<Header></Header>
+				<Routes>
+					<Route path="/" element={<Pages.PageMain />} />
+					<Route path="/login" element={<Pages.Login />} />
+				</Routes>
+			</Router>
+		</>
+	);
 }
 
-export default App
+export default App;
