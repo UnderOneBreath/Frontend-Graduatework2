@@ -1,3 +1,5 @@
+import "tailwindcss";
+
 function App() {
   return (
     <>
