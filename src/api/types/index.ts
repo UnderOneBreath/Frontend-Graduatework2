@@ -19,4 +19,4 @@ export type { UserResponse, UserCreateRequest, UserUpdateRequest } from "./user.
 export { UserRole } from "./user.types";
 
 // Common types
-export type { ApiError, ApiResponse, AsyncApiResponse } from "./common.types";
+export type { ApiError, ApiResponse, AsyncApiResponse, BackendResponse } from "./common.types";

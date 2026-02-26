@@ -1,25 +1,32 @@
 import { apiClient } from '../../client';
 import { API_ROUTES } from '../../../../api.config';
-import type { UserResponse } from '../../types';
+import type { UserResponse, BackendResponse } from '../../types';
 
-export const getCurrentUser = async (accessToken?: string): Promise<UserResponse> => {
+/**
+ * Получить текущего пользователя через GET /users/ (фильтруем по email из localStorage).
+ * /auth/me на бэкенде отсутствует; аутентификация идёт через httpOnly cookie.
+ */
+export const getCurrentUser = async (): Promise<UserResponse> => {
+    const email = localStorage.getItem('userEmail');
+    if (!email) {
+        throw new Error('Пользователь не авторизован');
+    }
+
     try {
-        const headers: Record<string, string> = {};
-
-        if (accessToken) {
-            headers.Authorization = `Bearer ${accessToken}`;
-        }
-
-        const response = await apiClient.get<UserResponse>(
-            API_ROUTES.auth.me,
-            { headers }
+        const response = await apiClient.get<BackendResponse<UserResponse[]>>(
+            API_ROUTES.users.list
         );
 
-        console.log('User data retrieved:', response.data);
+        const users = response.data.data ?? [];
+        const user = users.find((u) => u.email === email);
 
-        return response.data;
+        if (!user) {
+            throw new Error('Пользователь не найден');
+        }
+
+        return user;
     } catch (error) {
         console.error('Get current user error:', error);
-        throw new Error('Ошибка получения данных пользователя');
+        throw error instanceof Error ? error : new Error('Ошибка получения данных пользователя');
     }
 };

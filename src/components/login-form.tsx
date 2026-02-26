@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,16 +12,41 @@ import {
 import {
 	Field,
 	FieldDescription,
+	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { login } from "@/api/services/auth";
+import type { LoginRequest } from "@/api/types";
 
 export function LoginForm({
 	className,
 	...props
 }: React.ComponentProps<"div">) {
+	const navigate = useNavigate();
+	const [form, setForm] = useState<LoginRequest>({ email: "", password: "" });
+	const [error, setError] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
+
+	function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+		setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+	}
+
+	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+		e.preventDefault();
+		setError(null);
+		setLoading(true);
+		try {
+			await login(form);
+			navigate("/profile", { replace: true });
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : "Ошибка авторизации");
+			setLoading(false);
+		}
+	}
+
 	return (
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
 			<Card>
@@ -30,15 +57,18 @@ export function LoginForm({
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form>
+					<form onSubmit={handleSubmit}>
 						<FieldGroup>
 							<Field>
 								<FieldLabel htmlFor="email">Электронная почта</FieldLabel>
 								<Input
 									id="email"
+									name="email"
 									type="email"
 									placeholder="m@example.com"
 									required
+									value={form.email}
+									onChange={handleChange}
 								/>
 							</Field>
 							<Field>
@@ -51,17 +81,28 @@ export function LoginForm({
 										Забыли пароль?
 									</a>
 								</div>
-								<Input id="password" type="password" required />
+								<Input
+									id="password"
+									name="password"
+									type="password"
+									required
+									value={form.password}
+									onChange={handleChange}
+								/>
 							</Field>
+							{error && (
+								<Field>
+									<FieldError>{error}</FieldError>
+								</Field>
+							)}
 							<Field>
-								<Button type="submit">Войти</Button>
-								{/* <Button variant="outline" type="button">
-									Войти через Google
-								</Button> */}
+								<Button type="submit" disabled={loading}>
+									{loading ? "Вход..." : "Войти"}
+								</Button>
 								<FieldDescription className="text-center">
 									Нет аккаунта?{" "}
 									<Link
-										to="/SignUp"
+										to="/signup"
 										className="underline-offset-4 hover:underline"
 									>
 										Зарегистрироваться

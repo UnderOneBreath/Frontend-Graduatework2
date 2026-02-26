@@ -13,6 +13,7 @@ function App() {
 					<Route path="/" element={<Pages.PageMain />} />
 					<Route path="/login" element={<Pages.Login />} />
 					<Route path="/signup" element={<Pages.SignUp />} />
+					<Route path="/profile" element={<Pages.PageProfile />} />
 				</Routes>
 			</Router>
 		</>

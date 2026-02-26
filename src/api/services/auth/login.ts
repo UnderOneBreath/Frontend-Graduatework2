@@ -1,23 +1,26 @@
-import { apiClient } from '../../client';
-import { API_ROUTES } from '../../../../api.config';
-import type { LoginRequest, TokenResponse } from '../../types';
+import { apiClient } from "../../client";
+import { API_ROUTES } from "../../../../api.config";
+import type { LoginRequest } from "../../types";
+import type { BackendResponse } from "../../types";
 
-export const login = async (credentials: LoginRequest): Promise<TokenResponse> => {
-    try {
-        const response = await apiClient.post<TokenResponse>(API_ROUTES.auth.login, credentials);
+/**
+ * Логин через cookie-based auth.
+ * Бэкенд выставляет httpOnly cookies (access_token, refresh_token) через Set-Cookie.
+ * В теле ответа токенов нет — только { success: true, data: null }.
+ * Email сохраняем в localStorage чтобы найти текущего пользователя в GET /users/.
+ */
+export const login = async (credentials: LoginRequest): Promise<void> => {
+	const response = await apiClient.post<BackendResponse>(
+		API_ROUTES.auth.login,
+		credentials,
+	);
 
-        console.log('Login successful:', response.data);
+	if (!response.data.success) {
+		throw new Error(response.data.message || "Ошибка авторизации");
+	}
 
-        if (response.data.token) {
-            localStorage.setItem('accessToken', response.data.token);
-        }
-        if (response.data.refresh_token) {
-            localStorage.setItem('refreshToken', response.data.refresh_token);
-        }
-
-        return response.data;
-    } catch (error) {
-        console.error('Login error:', error);
-        throw new Error('Ошибка авторизации');
-    }
+	// Сохраняем email — единственный способ идентифицировать пользователя
+	// без /auth/me (которого нет) и без доступа к httpOnly cookie из JS
+	localStorage.setItem("userEmail", credentials.email);
+	// console.log('[login] userEmail stored:', credentials.email);
 };

@@ -13,3 +13,10 @@ export interface ApiResponse<T> {
 }
 
 export type AsyncApiResponse<T> = Promise<T>;
+
+// Формат обёртки бэкенда: Factory.create_ok_response()
+export interface BackendResponse<T = null> {
+    success: boolean;
+    message: string;
+    data: T;
+}

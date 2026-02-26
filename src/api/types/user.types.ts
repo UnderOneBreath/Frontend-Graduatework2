@@ -1,24 +1,30 @@
+export enum UserRole {
+	organizer = "organizer",
+	participant = "participant",
+}
+
 export interface UserResponse {
 	id?: string;
 	name: string;
 	email: string;
 	phone: string;
-	role: string;
+	role: UserRole;
 	created_at?: string;
 	updated_at?: string;
 }
 
+// Соответствует UserCreate в schemas/user.py
 export interface UserCreateRequest {
 	name: string;
 	email: string;
 	phone: string;
 	password: string;
-	role: string;
-	created_at?: string;
+	role: UserRole;
 }
 
+// Соответствует UserUpdate в schemas/user.py (email не обновляется)
 export interface UserUpdateRequest {
 	name?: string;
-	email?: string;
-	role?: string;
+	phone?: string;
+	role?: UserRole;
 }

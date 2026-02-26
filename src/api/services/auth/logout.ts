@@ -12,8 +12,7 @@ export const logout = async (): Promise<void> => {
         console.error('Logout error:', error);
         // Даже если запрос на сервер не прошёл, всё равно очищаем локальные токены
     } finally {
-        // Очищаем токены из localStorage
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        // Cookies удаляет сервер через Set-Cookie; очищаем localStorage
+        localStorage.removeItem('userEmail');
     }
 };
