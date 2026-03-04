@@ -5,7 +5,7 @@ export { apiClient } from './client';
 export * from './types';
 
 // Экспорт endpoints из корневого конфига
-export { API_ROUTES, BASE_API_URL } from '../../api.config';
+export { API_ROUTES, BASE_API_URL } from '@/../api.config';
 
 // Экспорт auth сервиса
 export * from './services/auth';

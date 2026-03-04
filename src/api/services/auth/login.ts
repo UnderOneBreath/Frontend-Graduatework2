@@ -1,7 +1,7 @@
-import { apiClient } from "../../client";
-import { API_ROUTES } from "../../../../api.config";
-import type { LoginRequest } from "../../types";
-import type { BackendResponse } from "../../types";
+import { apiClient } from "@/api/client";
+import { API_ROUTES } from "@/../api.config";
+import type { LoginRequest } from "@/api/types";
+import type { BackendResponse } from "@/api/types";
 
 /**
  * Логин через cookie-based auth.
@@ -19,7 +19,7 @@ export const login = async (credentials: LoginRequest): Promise<void> => {
 		throw new Error(response.data.message || "Ошибка авторизации");
 	}
 
-	// Сохраняем email — единственный способ идентифицировать пользователя
+
 	// без /auth/me (которого нет) и без доступа к httpOnly cookie из JS
 	localStorage.setItem("userEmail", credentials.email);
 	// console.log('[login] userEmail stored:', credentials.email);

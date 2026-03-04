@@ -1,6 +1,6 @@
-import { apiClient } from '../../client';
-import { API_ROUTES } from '../../../../api.config';
-import type { UserResponse, BackendResponse } from '../../types';
+import { apiClient } from "@/api/client";
+import { API_ROUTES } from "@/../api.config";
+import type { UserResponse, BackendResponse } from '@/api/types';
 
 /**
  * Получить текущего пользователя через GET /users/ (фильтруем по email из localStorage).

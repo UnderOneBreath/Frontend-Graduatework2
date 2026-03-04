@@ -1,11 +1,11 @@
-import { apiClient } from '../../client';
+import { apiClient } from '@/api/client';
 
 /**
  * Функция выхода из системы
  * Очищает токены и выполняет запрос на сервер для инвалидации сессии
  */
 export const logout = async (): Promise<void> => {
-    try {
+    try { 
         // Отправляем запрос на сервер для инвалидации токена
         await apiClient.post('/auth/logout');
     } catch (error) {

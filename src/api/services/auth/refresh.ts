@@ -1,6 +1,6 @@
-import { apiClient } from '../../client';
-import { API_ROUTES } from '../../../../api.config';
-import type { ServerRefreshTokenRequest, TokenResponse } from '../../types';
+import { apiClient } from "@/api/client";
+import { API_ROUTES } from "@/../api.config";
+import type { ServerRefreshTokenRequest, TokenResponse } from '@/api/types';
 
 export const refreshToken = async (refreshToken: string): Promise<TokenResponse> => {
     try {

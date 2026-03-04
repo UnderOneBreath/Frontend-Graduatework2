@@ -1,5 +1,5 @@
-import { apiClient } from "../../client";
-import { API_ROUTES } from "../../../../api.config";
+import { apiClient } from "@/api/client";
+import { API_ROUTES } from "@/../api.config";
 import type { UserCreateRequest, UserResponse } from "../../types";
 // import type { RegisterData, RegisterResponse } from '../../types';
 
