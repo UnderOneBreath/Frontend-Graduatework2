@@ -12,6 +12,9 @@ export default function Header() {
 					<Link to="/">
 						<Button variant="ghost">Главная</Button>
 					</Link>
+					<Link to="/lotteries">
+						<Button variant="ghost">Розыгрыши</Button>
+					</Link>
 					{isLoggedIn ? (
 						<Link to="/profile">
 							<Button variant="default">Профиль</Button>

@@ -13,7 +13,6 @@ export interface UserResponse {
 	updated_at?: string;
 }
 
-// Соответствует UserCreate в schemas/user.py
 export interface UserCreateRequest {
 	name: string;
 	email: string;
@@ -22,7 +21,6 @@ export interface UserCreateRequest {
 	role: UserRole;
 }
 
-// Соответствует UserUpdate в schemas/user.py (email не обновляется)
 export interface UserUpdateRequest {
 	name?: string;
 	phone?: string;
