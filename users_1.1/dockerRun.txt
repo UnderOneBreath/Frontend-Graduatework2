@@ -1,3 +1,0 @@
-docker build -t server:latest .
-docker rm -f server
-docker run -d -p 8000:8000 --name server server:latest

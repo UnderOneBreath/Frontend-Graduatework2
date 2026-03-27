@@ -5,3 +5,4 @@ export { default as SignUp } from "@/pages/PageSignUp";
 export { default as PageMain } from "@/pages/PageMain";
 export { default as PageProfile } from "@/pages/PageProfile";
 export { default as PageLotteries } from "@/pages/PageLotteries";
+export { default as PageLotteryCreate } from "@/pages/PageLotteryCreate";

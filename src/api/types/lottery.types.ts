@@ -1,8 +1,17 @@
 // Enums
-export enum LotteryStatus {
-	Active = "active",
-	Completed = "completed",
-}
+export const LotteryStatus = {
+	Active: "active",
+	Completed: "completed",
+} as const;
+
+export type LotteryStatus = typeof LotteryStatus[keyof typeof LotteryStatus];
+
+export const TicketStatus = {
+	Booked: "booked",
+	Free: "free",
+} as const;
+
+export type TicketStatus = typeof TicketStatus[keyof typeof TicketStatus];
 
 //Lottery
 
@@ -75,7 +84,9 @@ export interface TicketResponse {
 
 export interface TicketCreateRequest {
 	lottery_id: string;
-	user_id: string;
+	status?: TicketStatus;
+	count: number;
+	price: number;
 }
 
 //Notification
