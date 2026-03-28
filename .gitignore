@@ -27,3 +27,4 @@ dist-ssr
 api.config.tsx
 
 backend/*
+PROJECT_STRUCTURE.md
