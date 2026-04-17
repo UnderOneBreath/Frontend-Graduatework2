@@ -4,7 +4,8 @@ import { Button, Input, Label, Card, CardContent, Separator } from "@/components
 import type { LotteryCreateRequest, PrizeInput } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
 import { createLottery } from "@/api/services/lottery";
-import { getCompanies } from "@/api/services/lottery/organizer";
+import { getCompanies } from "@/api/services/organizer";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { UploadCloud, X, ImageIcon } from "lucide-react";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
@@ -129,6 +130,7 @@ function DateTimeInput({ id, value, onChange, min }: DateTimeInputProps) {
 
 export default function PageLotteryCreate() {
 	const navigate = useNavigate();
+	const isAuthenticated = useRequireAuth();
 
 	const [step, setStep] = useState(1);
 	const [form, setForm] = useState<LotteryCreateRequest>({
@@ -140,16 +142,29 @@ export default function PageLotteryCreate() {
 		prizes: [],
 	});
 	const [organizers, setOrganizers] = useState<CompanyResponse[]>([]);
+	const [editOrg, setEditOrg] = useState(false);
 	const [newPrize, setNewPrize] = useState<PrizeInput>(emptyPrize);
 	const [showPrizeForm, setShowPrizeForm] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
+		if (!isAuthenticated) return;
+		const userId = localStorage.getItem("userId");
 		getCompanies()
-			.then(setOrganizers)
+			.then((list) => {
+				const mine = userId
+					? list.filter((o) => o.employees?.some((e) => e.user_id === userId))
+					: [];
+				setOrganizers(mine);
+				setForm((prev) =>
+					prev.org_id || mine.length === 0 ? prev : { ...prev, org_id: mine[0].id },
+				);
+			})
 			.catch(() => {}); // список опциональный, ошибка не критична
-	}, []);
+	}, [isAuthenticated]);
+
+	if (!isAuthenticated) return null;
 
 	// ── validation ───────────────────────────────────────────────
 
@@ -280,17 +295,37 @@ export default function PageLotteryCreate() {
 
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="org_id">Организатор</Label>
-						<select
-							id="org_id"
-							value={form.org_id}
-							onChange={(e) => setForm((p) => ({ ...p, org_id: e.target.value }))}
-							className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-						>
-							<option value="">Выберите организатора</option>
-							{organizers.map((o) => (
-								<option key={o.id} value={o.id}>{o.name}</option>
-							))}
-						</select>
+						{editOrg || !form.org_id ? (
+							<select
+								id="org_id"
+								value={form.org_id}
+								onChange={(e) => {
+									setForm((p) => ({ ...p, org_id: e.target.value }));
+									if (e.target.value) setEditOrg(false);
+								}}
+								className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+							>
+								<option value="">Выберите организатора</option>
+								{organizers.map((o) => (
+									<option key={o.id} value={o.id}>{o.name}</option>
+								))}
+							</select>
+						) : (
+							<div className="flex items-center gap-2">
+								<div className="h-9 flex-1 rounded-md border border-input bg-muted/40 px-3 flex items-center text-sm">
+									{organizers.find((o) => o.id === form.org_id)?.name ?? form.org_id}
+								</div>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => setEditOrg(true)}
+									disabled={organizers.length <= 1}
+								>
+									Изменить
+								</Button>
+							</div>
+						)}
 					</div>
 
 					<div className="flex flex-col gap-1.5">
