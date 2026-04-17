@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+.env
+.env.local
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -28,3 +32,6 @@ api.config.tsx
 
 backend/*
 PROJECT_STRUCTURE.md
+
+.prettierignore
+prettier.config.js
