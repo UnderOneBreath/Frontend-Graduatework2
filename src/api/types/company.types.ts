@@ -1,5 +1,4 @@
-// --- Company ---
-// Связь: owner (user_id) → User 1..*, Company 0..*
+// --- Organizer (Company) ---
 
 export interface CompanyResponse {
 	id: string;
@@ -8,10 +7,8 @@ export interface CompanyResponse {
 	ogrn: number;
 	phone: string;
 	address: string;
-	logo: number; // UInt64 — идентификатор/ссылка на изображение
+	logo: string | null;
 	email: string;
-	owner: string; // UUID пользователя-владельца
-	brief_name: string;
 }
 
 export interface CompanyCreateRequest {
@@ -20,10 +17,9 @@ export interface CompanyCreateRequest {
 	ogrn: number;
 	phone: string;
 	address: string;
-	logo?: number;
+	logo?: string;
 	email: string;
-	owner: string; // user_id
-	brief_name: string;
+	password: string;
 }
 
 export interface CompanyUpdateRequest {
@@ -32,7 +28,6 @@ export interface CompanyUpdateRequest {
 	ogrn?: number;
 	phone?: string;
 	address?: string;
-	logo?: number;
+	logo?: string;
 	email?: string;
-	brief_name?: string;
 }

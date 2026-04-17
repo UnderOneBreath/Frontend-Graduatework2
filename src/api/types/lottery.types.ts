@@ -22,8 +22,15 @@ export interface LotteryResponse {
 	end_date: string; // ISO datetime string
 	max_entries: number;
 	status: LotteryStatus;
-	company_id: string;
+	org_id: string;
 	prizes?: PrizeResponse[];
+}
+
+export interface PrizeInput {
+	name: string;
+	description: string;
+	img_path?: string;
+	price: number;
 }
 
 export interface LotteryCreateRequest {
@@ -31,8 +38,8 @@ export interface LotteryCreateRequest {
 	start_date: string;
 	end_date: string;
 	max_entries: number;
-	status: LotteryStatus;
-	company_id: string;
+	org_id: string;
+	prizes: PrizeInput[];
 }
 
 export interface LotteryUpdateRequest {

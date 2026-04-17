@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { LotteryResponse } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
 import { getLotteries } from "@/api/services/lottery";
-import { getCompanies } from "@/api/services/company";
+import { getCompanies } from "@/api/services/lottery/organizer";
 import { LotteryCard } from "@/components/lottery-card";
 
 interface LotteryListProps {
@@ -37,7 +37,13 @@ export function LotteryList({ onLotteryDetails }: LotteryListProps) {
 
 	useEffect(() => {
 		setLoading(true);
-		Promise.all([getLotteries(), getCompanies()])
+		Promise.all([
+			getLotteries(),
+			getCompanies().catch((err: unknown) => {
+				console.warn("[LotteryList] companies fetch failed:", err);
+				return [] as CompanyResponse[];
+			}),
+		])
 			.then(([lotts, comps]) => {
 				setLotteries(lotts);
 				const byId = Object.fromEntries(comps.map((c) => [c.id, c]));
@@ -45,7 +51,11 @@ export function LotteryList({ onLotteryDetails }: LotteryListProps) {
 			})
 			.catch((err: unknown) => {
 				console.error("[LotteryList] fetch failed:", err);
-				setError("Не удалось загрузить лотереи");
+				const msg =
+					err instanceof Error ? err.message :
+					(err as { response?: { data?: { message?: string }; status?: number } })?.response?.data?.message ??
+					String(err);
+				setError(`Ошибка: ${msg}`);
 			})
 			.finally(() => setLoading(false));
 	}, []);
@@ -82,7 +92,7 @@ export function LotteryList({ onLotteryDetails }: LotteryListProps) {
 				<LotteryCard
 					key={lottery.id}
 					lottery={lottery}
-					companyName={companies[lottery.company_id]?.brief_name}
+					companyName={companies[lottery.org_id]?.name}
 					onDetails={onLotteryDetails}
 				/>
 			))}
