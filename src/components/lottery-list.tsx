@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { LotteryResponse } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
 import { getLotteries } from "@/api/services/lottery";
-import { getCompanies } from "@/api/services/lottery/organizer";
+import { getCompanies } from "@/api/services/organizer";
 import { LotteryCard } from "@/components/lottery-card";
 
 interface LotteryListProps {
