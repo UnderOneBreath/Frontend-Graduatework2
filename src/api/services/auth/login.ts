@@ -1,16 +1,11 @@
 import { apiClient } from "@/api/client";
 import { API_ROUTES } from "@/../api.config";
-import type { LoginRequest } from "@/api/types";
+import type { LoginRequest, TokenResponse } from "@/api/types";
 import type { BackendResponse } from "@/api/types";
+import { decodeAccessToken } from "@/api/utils/jwt";
 
-/**
- * Логин через cookie-based auth.
- * Бэкенд выставляет httpOnly cookies (access_token, refresh_token) через Set-Cookie.
- * В теле ответа токенов нет — только { success: true, data: null }.
- * Email сохраняем в localStorage чтобы найти текущего пользователя в GET /users/.
- */
 export const login = async (credentials: LoginRequest): Promise<void> => {
-	const response = await apiClient.post<BackendResponse>(
+	const response = await apiClient.post<BackendResponse<TokenResponse>>(
 		API_ROUTES.auth.login,
 		credentials,
 	);
@@ -19,8 +14,11 @@ export const login = async (credentials: LoginRequest): Promise<void> => {
 		throw new Error(response.data.message || "Ошибка авторизации");
 	}
 
-
-	// без /auth/me (которого нет) и без доступа к httpOnly cookie из JS
 	localStorage.setItem("userEmail", credentials.email);
-	// console.log('[login] userEmail stored:', credentials.email);
+
+	const token = response.data.data?.token;
+	if (token) {
+		const { sub } = decodeAccessToken(token);
+		if (sub) localStorage.setItem("userId", sub);
+	}
 };

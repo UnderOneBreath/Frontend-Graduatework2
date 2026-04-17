@@ -14,5 +14,6 @@ export const logout = async (): Promise<void> => {
     } finally {
         // Cookies удаляет сервер через Set-Cookie; очищаем localStorage
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('userId');
     }
 };
