@@ -1,30 +1,16 @@
 import { apiClient } from "@/api/client";
 import { API_ROUTES } from "@/../api.config";
-import type { ServerRefreshTokenRequest, TokenResponse } from '@/api/types';
+import type { BackendResponse, TokenResponse } from "@/api/types";
 
-export const refreshToken = async (refreshToken: string): Promise<TokenResponse> => {
-    try {
-        const requestData: ServerRefreshTokenRequest = {
-            refresh_token: refreshToken,
-        };
+export const refreshToken = async (): Promise<TokenResponse> => {
+	const response = await apiClient.post<BackendResponse<TokenResponse>>(
+		API_ROUTES.auth.refresh,
+		{},
+	);
 
-        const response = await apiClient.post<TokenResponse>(
-            API_ROUTES.auth.refresh,
-            requestData
-        );
+	if (!response.data.success || !response.data.data) {
+		throw new Error(response.data.message || "Ошибка обновления токена");
+	}
 
-        console.log('Token refreshed:', response.data);
-
-        if (response.data.token) {
-            localStorage.setItem('accessToken', response.data.token);
-        }
-        if (response.data.refresh_token) {
-            localStorage.setItem('refreshToken', response.data.refresh_token);
-        }
-
-        return response.data;
-    } catch (error) {
-        console.error('Refresh token error:', error);
-        throw new Error('Ошибка обновления токена');
-    }
+	return response.data.data;
 };

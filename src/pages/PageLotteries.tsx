@@ -19,7 +19,7 @@ export default function PageLotteries() {
           Создать розыгрыш
         </Button>
       </div>
-      <LotteryList />
+      <LotteryList onLotteryDetails={(id) => navigate(`/lotteries/${id}`)} />
     </div>
   );
 }

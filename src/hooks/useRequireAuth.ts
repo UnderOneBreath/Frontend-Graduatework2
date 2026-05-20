@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isAuthenticated } from "@/api/utils/jwt";
 
 export function useRequireAuth(redirectTo = "/login"): boolean {
 	const navigate = useNavigate();
-	const [isAuthenticated] = useState(() => !!localStorage.getItem("userEmail"));
+	const [authed] = useState(isAuthenticated);
 
 	useEffect(() => {
-		if (!isAuthenticated) {
+		if (!authed) {
 			navigate(redirectTo, { replace: true });
 		}
-	}, [isAuthenticated, navigate, redirectTo]);
+	}, [authed, navigate, redirectTo]);
 
-	return isAuthenticated;
+	return authed;
 }

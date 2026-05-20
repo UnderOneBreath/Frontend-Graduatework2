@@ -1,10 +1,14 @@
-export enum UserRole {
-	organizer = "organizer",
-	participant = "participant",
-}
+export const UserRole = {
+	organizer: "organizer",
+	participant: "participant",
+	admin: "admin",
+	moderator: "moderator",
+} as const;
+
+export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export interface UserResponse {
-	id?: string;
+	id: string;
 	name: string;
 	email: string;
 	phone: string;
@@ -18,7 +22,7 @@ export interface UserCreateRequest {
 	email: string;
 	phone: string;
 	password: string;
-	role: UserRole;
+	// role: UserRole;
 }
 
 export interface UserUpdateRequest {

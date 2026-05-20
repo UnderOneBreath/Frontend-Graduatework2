@@ -96,17 +96,3 @@ export interface TicketCreateRequest {
 	price: number;
 }
 
-//Notification
-
-export interface NotificationResponse {
-	id: string;
-	description: string;
-	status: boolean;
-	views: number;
-	lottery_id: string;
-}
-
-export interface NotificationCreateRequest {
-	description: string;
-	lottery_id: string;
-}

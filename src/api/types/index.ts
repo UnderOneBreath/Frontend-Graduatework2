@@ -31,11 +31,18 @@ export type {
 	PrizeUpdateRequest,
 	TicketResponse,
 	TicketCreateRequest,
-	NotificationResponse,
-	NotificationCreateRequest,
 } from "./lottery.types";
 
 export { LotteryStatus } from "./lottery.types";
+
+// Notification types
+export type {
+	NotificationResponse,
+	NotificationCreateRequest,
+	NotificationUpdateRequest,
+} from "./notification.types";
+
+export { NotificationType } from "./notification.types";
 
 // Company types
 export type {
@@ -43,3 +50,12 @@ export type {
 	CompanyCreateRequest,
 	CompanyUpdateRequest,
 } from "./company.types";
+
+// Moderation types
+export type {
+	OrganizerApplication,
+	OrganizerApplicationCompany,
+	ApplicationUpdateRequest,
+} from "./moderation.types";
+
+export { RequestStatus } from "./moderation.types";

@@ -1,6 +1,16 @@
 import axios, { AxiosError } from "axios";
 import { BASE_API_URL } from "@/../api.config";
 
+const apiKeys: Record<string, string | undefined> = {
+	'/users/': import.meta.env.VITE_API_KEY_USERS,
+	'/notifications/': import.meta.env.VITE_API_KEY_NOTIFICATIONS,
+	'/lotteries/': import.meta.env.VITE_API_KEY_LOTTERY,
+	'/tickets/': import.meta.env.VITE_API_KEY_LOTTERY,
+	'/prizes/': import.meta.env.VITE_API_KEY_LOTTERY,
+	'/organizers/': import.meta.env.VITE_API_KEY_ORGANIZERS,
+	'/requests/': import.meta.env.VITE_API_KEY_ORGANIZERS,
+}
+
 export const apiClient = axios.create({
 	baseURL: BASE_API_URL,
 	timeout: 10000,
@@ -10,8 +20,25 @@ export const apiClient = axios.create({
 	},
 });
 
+const getApiKeyForURL = (url?: string): string | undefined => {
+	if (!url) return undefined;
+	const lowerURL = url.toLowerCase();
+
+	for (const [key, apiKey] of Object.entries(apiKeys)) {
+		if (lowerURL.includes(key)) return apiKey;
+	}
+	return undefined;
+
+	// const key = Object.keys(apiKeys).find(key => lowerURL.includes(key));
+	// if (key) return apiKeys[key];
+}
+
+// text  text dad  dwd   dwdpl d
+// Временное решения для разработки: getApiKeyForURL, const apiKeys, interceptor/
+
 apiClient.interceptors.request.use((config) => {
-	const key = import.meta.env.VITE_API_KEY;
+	const key = getApiKeyForURL(config.url);
+	// const key = import.meta.env.VITE_API_KEY;
 	if (key) config.headers.set("X-API-Key", key);
 	return config;
 });

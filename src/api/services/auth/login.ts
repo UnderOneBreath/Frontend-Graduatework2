@@ -2,7 +2,8 @@ import { apiClient } from "@/api/client";
 import { API_ROUTES } from "@/../api.config";
 import type { LoginRequest, TokenResponse } from "@/api/types";
 import type { BackendResponse } from "@/api/types";
-import { decodeAccessToken } from "@/api/utils/jwt";
+import { persistTokenInfo } from "@/api/utils/jwt";
+import { scheduleRefreshFromToken } from "@/api/auth/tokenRefresher";
 
 export const login = async (credentials: LoginRequest): Promise<void> => {
 	const response = await apiClient.post<BackendResponse<TokenResponse>>(
@@ -18,7 +19,7 @@ export const login = async (credentials: LoginRequest): Promise<void> => {
 
 	const token = response.data.data?.token;
 	if (token) {
-		const { sub } = decodeAccessToken(token);
-		if (sub) localStorage.setItem("userId", sub);
+		persistTokenInfo(token);
+		scheduleRefreshFromToken(token);
 	}
 };

@@ -7,6 +7,10 @@ import { LotteryCard } from "@/components/lottery-card";
 
 interface LotteryListProps {
 	onLotteryDetails?: (id: string) => void;
+	orgId?: string;
+	excludeId?: string;
+	limit?: number;
+	emptyText?: string;
 }
 
 function LotteryCardSkeleton() {
@@ -29,7 +33,7 @@ function LotteryCardSkeleton() {
 	);
 }
 
-export function LotteryList({ onLotteryDetails }: LotteryListProps) {
+export function LotteryList({ onLotteryDetails, orgId, excludeId, limit, emptyText }: LotteryListProps) {
 	const [lotteries, setLotteries] = useState<LotteryResponse[]>([]);
 	const [companies, setCompanies] = useState<Record<string, CompanyResponse>>({});
 	const [loading, setLoading] = useState(true);
@@ -78,17 +82,29 @@ export function LotteryList({ onLotteryDetails }: LotteryListProps) {
 		);
 	}
 
-	if (lotteries.length === 0) {
+	let visible = orgId
+		? lotteries.filter((l) => l.org_id === orgId)
+		: lotteries;
+	if (excludeId) {
+		visible = visible.filter((l) => l.id !== excludeId);
+	}
+	if (typeof limit === "number") {
+		visible = visible.slice(0, limit);
+	}
+
+	if (visible.length === 0) {
 		return (
 			<div className="flex justify-center items-center py-16">
-				<p className="text-muted-foreground">Лотереи не найдены</p>
+				<p className="text-muted-foreground">
+					{emptyText ?? "Лотереи не найдены"}
+				</p>
 			</div>
 		);
 	}
 
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-			{lotteries.map((lottery) => (
+			{visible.map((lottery) => (
 				<LotteryCard
 					key={lottery.id}
 					lottery={lottery}

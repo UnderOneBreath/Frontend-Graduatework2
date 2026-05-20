@@ -18,7 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { register } from "@/api/services/auth";
-import { UserRole } from "@/api/types";
 import type { UserCreateRequest } from "@/api/types";
 
 type SignupFormData = Omit<UserCreateRequest, "role"> & {
@@ -57,7 +56,6 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         email: form.email,
         phone: form.phone,
         password: form.password,
-        role: UserRole.participant,
       };
       await register(payload);
       navigate("/login");

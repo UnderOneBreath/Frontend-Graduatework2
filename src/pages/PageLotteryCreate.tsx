@@ -5,7 +5,9 @@ import type { LotteryCreateRequest, PrizeInput } from "@/api/types/lottery.types
 import type { CompanyResponse } from "@/api/types/company.types";
 import { createLottery } from "@/api/services/lottery";
 import { getCompanies } from "@/api/services/organizer";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useRequireRole } from "@/hooks/useRequireRole";
+import { getCurrentUserId } from "@/api/utils/jwt";
+import { UserRole } from "@/api/types/user.types";
 import { UploadCloud, X, ImageIcon } from "lucide-react";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
@@ -130,7 +132,7 @@ function DateTimeInput({ id, value, onChange, min }: DateTimeInputProps) {
 
 export default function PageLotteryCreate() {
 	const navigate = useNavigate();
-	const isAuthenticated = useRequireAuth();
+	const allowed = useRequireRole([UserRole.organizer, UserRole.admin]);
 
 	const [step, setStep] = useState(1);
 	const [form, setForm] = useState<LotteryCreateRequest>({
@@ -149,8 +151,8 @@ export default function PageLotteryCreate() {
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		if (!isAuthenticated) return;
-		const userId = localStorage.getItem("userId");
+		if (!allowed) return;
+		const userId = getCurrentUserId();
 		getCompanies()
 			.then((list) => {
 				const mine = userId
@@ -162,9 +164,9 @@ export default function PageLotteryCreate() {
 				);
 			})
 			.catch(() => {}); // список опциональный, ошибка не критична
-	}, [isAuthenticated]);
+	}, [allowed]);
 
-	if (!isAuthenticated) return null;
+	if (!allowed) return null;
 
 	// ── validation ───────────────────────────────────────────────
 
