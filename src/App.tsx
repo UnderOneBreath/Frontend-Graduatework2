@@ -2,8 +2,6 @@ import "tailwindcss";
 import "@/index.css";
 import { useEffect } from "react";
 import Header from "@/components/header";
-import DashboardHeader from "./components/dashboard/DashboardHeader";
-// import { useDashboard } from "./context/DashboardContext";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import * as Pages from "@/pages";
 import OverviewView from "@/components/dashboard/personal/OverviewView";

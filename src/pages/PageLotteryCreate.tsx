@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Input, Label, Card, CardContent, Separator } from "@/components/ui/";
 import type { LotteryCreateRequest, PrizeInput } from "@/api/types/lottery.types";
+import { LotteryStatus } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
-import { createLottery } from "@/api/services/lottery";
+import { createLottery, updateLottery } from "@/api/services/lottery";
 import { getCompanies } from "@/api/services/organizer";
-import { useRequireRole } from "@/hooks/useRequireRole";
-import { getCurrentUserId } from "@/api/utils/jwt";
+import { getCurrentUserId, getCurrentRole, isAuthenticated } from "@/api/utils/jwt";
 import { UserRole } from "@/api/types/user.types";
 import { UploadCloud, X, ImageIcon } from "lucide-react";
 
@@ -132,7 +132,19 @@ function DateTimeInput({ id, value, onChange, min }: DateTimeInputProps) {
 
 export default function PageLotteryCreate() {
 	const navigate = useNavigate();
-	const allowed = useRequireRole([UserRole.organizer, UserRole.admin]);
+	const [allowed] = useState<boolean>(() => {
+		if (!isAuthenticated()) return false;
+		return getCurrentRole() === UserRole.organizer;
+	});
+
+	useEffect(() => {
+		if (allowed) return;
+		if (!isAuthenticated()) {
+			navigate("/login", { replace: true });
+			return;
+		}
+		navigate("/organizer/apply", { replace: true });
+	}, [allowed, navigate]);
 
 	const [step, setStep] = useState(1);
 	const [form, setForm] = useState<LotteryCreateRequest>({
@@ -220,8 +232,9 @@ export default function PageLotteryCreate() {
 		setIsLoading(true);
 		setError(null);
 		try {
-			await createLottery(form);
-			navigate("/lotteries");
+			const created = await createLottery(form);
+			await updateLottery(created.id, { status: LotteryStatus.Active });
+			navigate("/dashboard/draws");
 		} catch (err: unknown) {
 			console.error("[createLottery] failed:", err);
 			const msg =

@@ -66,8 +66,7 @@ export default function DrawsView() {
 	}
 
 	function openCreate() {
-		setEditing(null);
-		setSheetOpen(true);
+		navigate("/lotteries/create");
 	}
 
 	function openEdit(l: LotteryResponse) {
