@@ -35,3 +35,6 @@ PROJECT_STRUCTURE.md
 
 .prettierignore
 prettier.config.js
+
+CLAUDE.md
+ready-made-sql-data
