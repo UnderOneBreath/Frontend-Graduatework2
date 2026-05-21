@@ -2,9 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Input, Label, Card, CardContent, Separator } from "@/components/ui/";
 import type { LotteryCreateRequest, PrizeInput } from "@/api/types/lottery.types";
-import { LotteryStatus } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
-import { createLottery, updateLottery } from "@/api/services/lottery";
+import { createLottery } from "@/api/services/lottery";
 import { getCompanies } from "@/api/services/organizer";
 import { getCurrentUserId, getCurrentRole, isAuthenticated } from "@/api/utils/jwt";
 import { UserRole } from "@/api/types/user.types";
@@ -233,15 +232,13 @@ export default function PageLotteryCreate() {
 		setError(null);
 		try {
 			const created = await createLottery(form);
-			await updateLottery(created.id, { status: LotteryStatus.Active });
-			navigate("/dashboard/draws");
+			navigate(`/lotteries/${created.id}`);
 		} catch (err: unknown) {
 			console.error("[createLottery] failed:", err);
 			const msg =
 				(err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
 				(err instanceof Error ? err.message : String(err));
 			setError(`Ошибка: ${msg}`);
-		} finally {
 			setIsLoading(false);
 		}
 	}
@@ -587,11 +584,20 @@ export default function PageLotteryCreate() {
 					{error && <p className="text-sm text-destructive">{error}</p>}
 
 					<div className="flex justify-between mt-2">
-						<Button type="button" variant="outline" onClick={() => setStep(2)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setStep(2)}
+							disabled={isLoading}
+						>
 							← Назад
 						</Button>
-						<Button type="button" onClick={handleSubmit} disabled={isLoading}>
-							{isLoading ? "Создание..." : "Создать розыгрыш"}
+						<Button
+							type="button"
+							onClick={handleSubmit}
+							disabled={isLoading}
+						>
+							{isLoading ? "Создаём..." : "Создать"}
 						</Button>
 					</div>
 				</div>

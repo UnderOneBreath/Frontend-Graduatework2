@@ -2,18 +2,28 @@ import { Badge } from "@/components/ui/badge";
 import { LotteryStatus } from "@/api/types/lottery.types";
 
 interface LotteryStatusBadgeProps {
-	status: LotteryStatus;
+	status: LotteryStatus | "inactive";
 	className?: string;
 }
 
 export function LotteryStatusBadge({ status, className }: LotteryStatusBadgeProps) {
-	const isActive = status === LotteryStatus.Active;
+	if (status === LotteryStatus.Active) {
+		return (
+			<Badge variant="success" className={className}>
+				Активен
+			</Badge>
+		);
+	}
+	if (status === LotteryStatus.Completed) {
+		return (
+			<Badge variant="secondary" className={className}>
+				Завершён
+			</Badge>
+		);
+	}
 	return (
-		<Badge
-			variant={isActive ? "success" : "secondary"}
-			className={className}
-		>
-			{isActive ? "Активен" : "Завершён"}
+		<Badge variant="warning" className={className}>
+			Черновик
 		</Badge>
 	);
 }

@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useLotteryDetail } from "@/hooks/useLotteryDetail";
 import { useUserCompanies } from "@/hooks/useUserCompanies";
 import { getCurrentUserId, isAuthenticated } from "@/api/utils/jwt";
+import { updateLottery } from "@/api/services/lottery";
+import { LotteryStatus } from "@/api/types/lottery.types";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LotteryBreadcrumbs } from "@/components/lottery/LotteryBreadcrumbs";
@@ -32,6 +34,9 @@ export default function PageLotteryInfo() {
 		() => Object.fromEntries(detail.prizes.map((p) => [p.id, p])),
 		[detail.prizes],
 	);
+
+	const [publishing, setPublishing] = useState(false);
+	const [publishError, setPublishError] = useState<string | null>(null);
 
 	if (detail.isLoading) {
 		return <LotteryDetailSkeleton />;
@@ -64,9 +69,50 @@ export default function PageLotteryInfo() {
 
 	const { lottery, prizes, tickets, winners, organizer, paidCount, refetch } = detail;
 
+	const isDraft = lottery.status !== "active" && lottery.status !== "completed";
+
+	async function handlePublish() {
+		if (publishing) return;
+		setPublishing(true);
+		setPublishError(null);
+		try {
+			await updateLottery(lottery.id, { status: LotteryStatus.Active });
+			refetch();
+		} catch (err: unknown) {
+			console.error("[publishLottery] failed:", err);
+			const msg =
+				(err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+				(err instanceof Error ? err.message : String(err));
+			setPublishError(msg);
+		} finally {
+			setPublishing(false);
+		}
+	}
+
 	return (
 		<div className="max-w-5xl mx-auto px-4 md:px-6 py-6 flex flex-col gap-6">
 			<LotteryBreadcrumbs name={lottery.name} />
+
+			{isOwner && isDraft && (
+				<div
+					role="status"
+					aria-live="polite"
+					className="rounded-lg border border-amber-500/50 bg-amber-500/10 dark:bg-amber-500/15 p-4 flex flex-col gap-3 sm:flex-row sm:items-center"
+				>
+					<div className="flex-1">
+						<p className="font-medium text-foreground">Этот розыгрыш — черновик</p>
+						<p className="text-sm text-muted-foreground">
+							Он скрыт от других пользователей и не отображается в общем списке. Опубликуйте его, чтобы участники могли присоединиться.
+						</p>
+						{publishError && (
+							<p className="text-sm text-destructive mt-2">Не удалось опубликовать: {publishError}</p>
+						)}
+					</div>
+					<Button onClick={handlePublish} disabled={publishing} className="shrink-0">
+						{publishing ? "Публикуем..." : "Опубликовать розыгрыш"}
+					</Button>
+				</div>
+			)}
 
 			<LotteryHero lottery={lottery} prizes={prizes} organizer={organizer}>
 				<div className="flex flex-wrap items-center gap-3">
