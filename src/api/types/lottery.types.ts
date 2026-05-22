@@ -1,3 +1,5 @@
+import type { RandomizerProvider, RandomizerResult } from "@/api/types/randomizer.types";
+
 // Enums
 export const LotteryStatus = {
 	Active: "active",
@@ -7,8 +9,9 @@ export const LotteryStatus = {
 export type LotteryStatus = typeof LotteryStatus[keyof typeof LotteryStatus];
 
 export const TicketStatus = {
+	Vacant: "vacant",
 	Booked: "booked",
-	Free: "free",
+	Paid: "paid",
 } as const;
 
 export type TicketStatus = typeof TicketStatus[keyof typeof TicketStatus];
@@ -24,6 +27,8 @@ export interface LotteryResponse {
 	status: LotteryStatus;
 	org_id: string;
 	prizes?: PrizeResponse[];
+	randomizer_type?: RandomizerProvider | null;
+	randomizer_result?: RandomizerResult | null;
 }
 
 export interface PrizeInput {
@@ -40,6 +45,7 @@ export interface LotteryCreateRequest {
 	max_entries: number;
 	org_id: string;
 	prizes: PrizeInput[];
+	randomizer_type?: RandomizerProvider;
 }
 
 export interface LotteryUpdateRequest {
@@ -80,6 +86,7 @@ export interface PrizeUpdateRequest {
 
 export interface TicketResponse {
 	id: string;
+	status: TicketStatus;
 	purchase_date: string; // ISO datetime
 	is_winner: boolean;
 	price: number;
