@@ -5,8 +5,10 @@ import { useUserCompanies } from "@/hooks/useUserCompanies";
 import OrganizerLayout from "@/components/organizer/OrganizerLayout";
 import CompanySwitcher from "@/components/organizer/CompanySwitcher";
 import { LotteryList } from "@/components/lottery-list";
+import OrganizerBookingsTab from "@/components/organizer/OrganizerBookingsTab";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 
 export default function PageOrganizer() {
 	const isAuthenticated = useRequireAuth();
@@ -88,24 +90,32 @@ export default function PageOrganizer() {
 
 			<Separator />
 
-			<section className="flex flex-col gap-4 py-6">
-				<div className="flex items-center justify-between gap-4">
-					<div className="flex flex-col gap-1">
-						<h2 className="text-base text-foreground">Розыгрыши</h2>
+			<Tabs defaultValue="lotteries" className="py-6">
+				<TabsList>
+					<TabsTrigger value="lotteries">Розыгрыши</TabsTrigger>
+					<TabsTrigger value="bookings">Бронирования</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="lotteries" className="flex flex-col gap-4 pt-4">
+					<div className="flex items-center justify-between gap-4">
 						<p className="text-sm text-muted-foreground">
 							Управление розыгрышами компании.
 						</p>
+						<Button onClick={() => navigate("/lotteries/create")}>
+							Создать розыгрыш
+						</Button>
 					</div>
-					<Button onClick={() => navigate("/lotteries/create")}>
-						Создать розыгрыш
-					</Button>
-				</div>
-				<LotteryList
-					orgId={c.id}
-					emptyText="У этой компании пока нет розыгрышей."
-					onLotteryDetails={(id) => navigate(`/lotteries/${id}`)}
-				/>
-			</section>
+					<LotteryList
+						orgId={c.id}
+						emptyText="У этой компании пока нет розыгрышей."
+						onLotteryDetails={(id) => navigate(`/lotteries/${id}`)}
+					/>
+				</TabsContent>
+
+				<TabsContent value="bookings" className="pt-4">
+					<OrganizerBookingsTab companyId={c.id} />
+				</TabsContent>
+			</Tabs>
 		</OrganizerLayout>
 	);
 }

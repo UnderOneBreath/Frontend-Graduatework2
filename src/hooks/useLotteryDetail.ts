@@ -11,7 +11,7 @@ import type {
 	PrizeResponse,
 	TicketResponse,
 } from "@/api/types/lottery.types";
-import { LotteryStatus } from "@/api/types/lottery.types";
+import { LotteryStatus, TicketStatus } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
 
 const USE_MOCK = false;
@@ -90,12 +90,13 @@ function buildMockState(id: string): {
 		const claimed = i < 32;
 		return {
 			id: `ticket-${i + 1}`,
+			status: claimed ? TicketStatus.Paid : TicketStatus.Vacant,
 			purchase_date: claimed
 				? new Date(now - (i + 1) * 60 * 60 * 1000).toISOString()
 				: "",
 			is_winner: false,
 			price: 100,
-			serial_number: 1000 + i,
+			serial_number: `lottery_${id}_${i + 1}`,
 			lottery_id: id,
 			user_id: claimed ? `user-${(i + 17) * 31}` : "",
 			prize_id: null,

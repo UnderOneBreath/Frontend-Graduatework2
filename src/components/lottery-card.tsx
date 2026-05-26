@@ -7,12 +7,14 @@ interface LotteryCardProps {
 	lottery: LotteryResponse;
 	companyName?: string;
 	onDetails?: (id: string) => void;
+	hideStatus?: boolean;
 }
 
 export function LotteryCard({
 	lottery,
 	companyName,
 	onDetails,
+	hideStatus,
 }: LotteryCardProps) {
 	const isActive = lottery.status === LotteryStatus.Active;
 	const prizes = lottery.prizes ?? [];
@@ -37,15 +39,16 @@ export function LotteryCard({
 					</div>
 				)}
 
-				{/* Статус розыгрыша */}
-				<div className="absolute top-3 left-3">
-					<Badge
-						variant={isActive ? "success" : "secondary"}
-						className="shadow-sm"
-					>
-						{isActive ? "Активна" : "Завершена"}
-					</Badge>
-				</div>
+				{!hideStatus && (
+					<div className="absolute top-3 left-3">
+						<Badge
+							variant={isActive ? "success" : "secondary"}
+							className="shadow-sm"
+						>
+							{isActive ? "Активна" : "Завершена"}
+						</Badge>
+					</div>
+				)}
 			</div>
 
 			{/* Контент */}
@@ -56,9 +59,11 @@ export function LotteryCard({
 					<p className="text-sm text-gray-500 mt-1">{companyName}</p>
 				)}
 
-				<p className="text-sm text-gray-400 mt-2">
-					{isActive ? "Активна" : "Завершена"}
-				</p>
+				{!hideStatus && (
+					<p className="text-sm text-gray-400 mt-2">
+						{isActive ? "Активна" : "Завершена"}
+					</p>
+				)}
 
 				{prizes.length > 0 && (
 					<div className="flex flex-wrap gap-1 mt-3">

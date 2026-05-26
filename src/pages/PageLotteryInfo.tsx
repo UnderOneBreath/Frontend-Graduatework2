@@ -2,9 +2,13 @@ import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useLotteryDetail } from "@/hooks/useLotteryDetail";
 import { useUserCompanies } from "@/hooks/useUserCompanies";
-import { getCurrentUserId, isAuthenticated } from "@/api/utils/jwt";
-import { updateLottery } from "@/api/services/lottery";
-import { LotteryStatus } from "@/api/types/lottery.types";
+import { getCurrentRole, getCurrentUserId, isAuthenticated } from "@/api/utils/jwt";
+import { UserRole } from "@/api/types/user.types";
+import { updateLottery, setTicketWinner } from "@/api/services/lottery";
+import { drawWinners } from "@/api/services/randomizer";
+import { LotteryStatus, TicketStatus } from "@/api/types/lottery.types";
+import { RandomizerProvider } from "@/api/types/randomizer.types";
+import type { RandomizerResult } from "@/api/types/randomizer.types";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LotteryBreadcrumbs } from "@/components/lottery/LotteryBreadcrumbs";
@@ -17,6 +21,17 @@ import { LotterySimilarSection } from "@/components/lottery/LotterySimilarSectio
 import { LotteryShareButton } from "@/components/lottery/LotteryShareButton";
 import { LotteryPrimaryCTA } from "@/components/lottery/LotteryPrimaryCTA";
 import { LotteryDetailSkeleton } from "@/components/lottery/LotteryDetailSkeleton";
+import { LotteryFairnessProof } from "@/components/lottery/LotteryFairnessProof";
+
+function loadProofFromStorage(lotteryId: string | undefined): RandomizerResult | null {
+	if (!lotteryId) return null;
+	try {
+		const raw = sessionStorage.getItem(`lotteryProof_${lotteryId}`);
+		return raw ? (JSON.parse(raw) as RandomizerResult) : null;
+	} catch {
+		return null;
+	}
+}
 
 export default function PageLotteryInfo() {
 	const { id } = useParams<{ id: string }>();
@@ -25,9 +40,13 @@ export default function PageLotteryInfo() {
 
 	const authed = isAuthenticated();
 	const userId = getCurrentUserId();
+	const role = getCurrentRole();
 	const isOwner = useMemo(
-		() => !!detail.lottery && companies.some((c) => c.id === detail.lottery!.org_id),
-		[detail.lottery, companies],
+		() =>
+			role === UserRole.organizer &&
+			!!detail.lottery &&
+			companies.some((c) => c.id === detail.lottery!.org_id),
+		[role, detail.lottery, companies],
 	);
 
 	const prizesById = useMemo(
@@ -37,6 +56,9 @@ export default function PageLotteryInfo() {
 
 	const [publishing, setPublishing] = useState(false);
 	const [publishError, setPublishError] = useState<string | null>(null);
+	const [drawing, setDrawing] = useState(false);
+	const [drawError, setDrawError] = useState<string | null>(null);
+	const [proof, setProof] = useState<RandomizerResult | null>(() => loadProofFromStorage(id));
 
 	if (detail.isLoading) {
 		return <LotteryDetailSkeleton />;
@@ -70,6 +92,45 @@ export default function PageLotteryInfo() {
 	const { lottery, prizes, tickets, winners, organizer, paidCount, refetch } = detail;
 
 	const isDraft = lottery.status !== "active" && lottery.status !== "completed";
+	const canDraw =
+		isOwner &&
+		lottery.status === LotteryStatus.Active &&
+		new Date(lottery.end_date) <= new Date() &&
+		winners.length === 0;
+
+	const effectiveProof = lottery.randomizer_result ?? proof;
+
+	async function handleDraw() {
+		if (drawing) return;
+		setDrawing(true);
+		setDrawError(null);
+		try {
+			const paid = tickets.filter((t) => t.status === TicketStatus.Paid);
+			if (paid.length < prizes.length) {
+				throw new Error(
+					`Недостаточно оплаченных участников: ${paid.length} из ${prizes.length}`,
+				);
+			}
+			const provider = lottery.randomizer_type ?? RandomizerProvider.RandomOrg;
+			const result = await drawWinners(provider, prizes.length, paid.length);
+
+			for (let i = 0; i < prizes.length; i++) {
+				const ticket = paid[result.winningSerials[i] - 1];
+				await setTicketWinner(ticket.id, prizes[i].id);
+			}
+
+			await updateLottery(lottery.id, { status: LotteryStatus.Completed });
+			sessionStorage.setItem(`lotteryProof_${lottery.id}`, JSON.stringify(result));
+			setProof(result);
+			refetch();
+		} catch (err: unknown) {
+			console.error("[handleDraw] failed:", err);
+			const msg = err instanceof Error ? err.message : String(err);
+			setDrawError(msg);
+		} finally {
+			setDrawing(false);
+		}
+	}
 
 	async function handlePublish() {
 		if (publishing) return;
@@ -114,6 +175,27 @@ export default function PageLotteryInfo() {
 				</div>
 			)}
 
+			{canDraw && (
+				<div
+					role="status"
+					aria-live="polite"
+					className="rounded-lg border border-primary/50 bg-primary/5 p-4 flex flex-col gap-3 sm:flex-row sm:items-center"
+				>
+					<div className="flex-1">
+						<p className="font-medium text-foreground">Время определить победителей</p>
+						<p className="text-sm text-muted-foreground">
+							Срок розыгрыша истёк. Запустите выбор победителей через внешний рандомайзер — результат будет публично проверяемым.
+						</p>
+						{drawError && (
+							<p className="text-sm text-destructive mt-2">Ошибка: {drawError}</p>
+						)}
+					</div>
+					<Button onClick={handleDraw} disabled={drawing} className="shrink-0">
+						{drawing ? "Проводим..." : "Провести розыгрыш"}
+					</Button>
+				</div>
+			)}
+
 			<LotteryHero lottery={lottery} prizes={prizes} organizer={organizer}>
 				<div className="flex flex-wrap items-center gap-3">
 					<LotteryPrimaryCTA
@@ -123,6 +205,7 @@ export default function PageLotteryInfo() {
 						isAuthenticated={authed}
 						userId={userId}
 						isOwner={isOwner}
+						organizer={organizer}
 						onParticipated={refetch}
 					/>
 					<LotteryShareButton />
@@ -164,6 +247,19 @@ export default function PageLotteryInfo() {
 					status={lottery.status}
 				/>
 			</section>
+
+			{effectiveProof && (
+				<>
+					<Separator />
+					<section id="fairness" className="flex flex-col gap-4 animate-in fade-in duration-500">
+						<SectionHeading
+							title="Проверка честности"
+							description="Как был определён победитель"
+						/>
+						<LotteryFairnessProof result={effectiveProof} />
+					</section>
+				</>
+			)}
 
 			<Separator />
 

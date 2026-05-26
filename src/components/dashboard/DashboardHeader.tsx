@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { LogOut, Moon, Sun, User } from "lucide-react";
 import { logout } from "@/api/services/auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useDashboard } from "@/context/DashboardContext";
 import { useTheme } from "@/context/ThemeProvider";
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+	`text-sm transition-colors ${
+		isActive
+			? "text-foreground font-medium"
+			: "text-muted-foreground hover:text-foreground"
+	}`;
 
 function getInitials(name: string, email: string): string {
 	if (name) {
@@ -56,11 +63,19 @@ export default function DashboardHeader() {
 
 	return (
 		<header className="border-b border-border bg-background">
-			<div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-6">
+			<div className="mx-auto grid h-14 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-6">
 				<Link to="/" className="text-base font-medium tracking-tight hover:opacity-80">
-					Лотерея
+					{/* Name */}
 				</Link>
-				<div className="flex items-center gap-2">
+				<nav className="hidden md:flex items-center justify-center gap-8">
+					<NavLink to="/" end className={navLinkClass}>
+						Главная
+					</NavLink>
+					<NavLink to="/lotteries" className={navLinkClass}>
+						Розыгрыши
+					</NavLink>
+				</nav>
+				<div className="flex items-center gap-2 justify-self-end">
 					<Button
 						variant="ghost"
 						size="icon-sm"

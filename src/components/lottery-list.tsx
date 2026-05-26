@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { LotteryResponse } from "@/api/types/lottery.types";
+import type { LotteryResponse, LotteryStatus } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
 import { getLotteries } from "@/api/services/lottery";
 import { getCompanies } from "@/api/services/organizer";
@@ -11,6 +11,8 @@ interface LotteryListProps {
 	excludeId?: string;
 	limit?: number;
 	emptyText?: string;
+	status?: LotteryStatus;
+	hideStatus?: boolean;
 }
 
 function LotteryCardSkeleton() {
@@ -33,7 +35,15 @@ function LotteryCardSkeleton() {
 	);
 }
 
-export function LotteryList({ onLotteryDetails, orgId, excludeId, limit, emptyText }: LotteryListProps) {
+export function LotteryList({
+	onLotteryDetails,
+	orgId,
+	excludeId,
+	limit,
+	emptyText,
+	status,
+	hideStatus,
+}: LotteryListProps) {
 	const [lotteries, setLotteries] = useState<LotteryResponse[]>([]);
 	const [companies, setCompanies] = useState<Record<string, CompanyResponse>>({});
 	const [loading, setLoading] = useState(true);
@@ -85,6 +95,9 @@ export function LotteryList({ onLotteryDetails, orgId, excludeId, limit, emptyTe
 	let visible = orgId
 		? lotteries.filter((l) => l.org_id === orgId)
 		: lotteries;
+	if (status) {
+		visible = visible.filter((l) => l.status === status);
+	}
 	if (excludeId) {
 		visible = visible.filter((l) => l.id !== excludeId);
 	}
@@ -110,6 +123,7 @@ export function LotteryList({ onLotteryDetails, orgId, excludeId, limit, emptyTe
 					lottery={lottery}
 					companyName={companies[lottery.org_id]?.name}
 					onDetails={onLotteryDetails}
+					hideStatus={hideStatus}
 				/>
 			))}
 		</div>

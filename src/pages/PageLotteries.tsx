@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { LotteryList } from "@/components/lottery-list";
 import { Button } from "@/components/ui/";
+import { LotteryStatus } from "@/api/types/lottery.types";
 
 export default function PageLotteries() {
   const navigate = useNavigate();
@@ -11,15 +12,18 @@ export default function PageLotteries() {
         <div>
           <h1 className="text-2xl font-bold">Розыгрыши</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Здесь вы можете просмотреть все текущие розыгрыши и принять участие
-            в них.
+            Открытые для участия розыгрыши. Завершённые — в вашем личном кабинете.
           </p>
         </div>
         <Button onClick={() => navigate("/lotteries/create")}>
           Создать розыгрыш
         </Button>
       </div>
-      <LotteryList onLotteryDetails={(id) => navigate(`/lotteries/${id}`)} />
+      <LotteryList
+        status={LotteryStatus.Active}
+        hideStatus
+        onLotteryDetails={(id) => navigate(`/lotteries/${id}`)}
+      />
     </div>
   );
 }

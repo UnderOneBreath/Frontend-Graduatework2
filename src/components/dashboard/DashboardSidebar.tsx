@@ -3,6 +3,7 @@ import {
 	BarChart3,
 	Bell,
 	LayoutGrid,
+	Receipt,
 	Settings,
 	Ticket,
 	User,
@@ -13,6 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/context/DashboardContext";
 import OrgSwitcher from "@/components/dashboard/OrgSwitcher";
+import { getCurrentRole } from "@/api/utils/jwt";
+import { UserRole } from "@/api/types/user.types";
 
 interface NavItem {
 	to: string;
@@ -29,6 +32,7 @@ const PERSONAL_NAV: NavItem[] = [
 
 const COMPANY_NAV: NavItem[] = [
 	{ to: "/dashboard/draws", label: "Розыгрыши", icon: LayoutGrid },
+	{ to: "/dashboard/bookings", label: "Бронирования", icon: Receipt },
 	{ to: "/dashboard/analytics", label: "Аналитика", icon: BarChart3 },
 	{ to: "/dashboard/settings", label: "Настройки", icon: Settings },
 ];
@@ -44,8 +48,10 @@ function navItemClass(isActive: boolean): string {
 
 export default function DashboardSidebar() {
 	const { active, companies, loadingCompanies, setPersonal } = useDashboard();
+	const role = getCurrentRole();
 
-	const showOrgSection = loadingCompanies || companies.length > 0;
+	const showOrgSection =
+		role === UserRole.organizer && (loadingCompanies || companies.length > 0);
 
 	return (
 		<aside className="md:sticky md:top-6 md:self-start">

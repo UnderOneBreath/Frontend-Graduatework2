@@ -41,7 +41,7 @@ export default function Header() {
 						to="/"
 						className="text-base text-foreground tracking-tight hover:opacity-80 transition-opacity"
 					>
-						Лотерея
+						{/* Лотерея */}
 					</Link>
 				</div>
 

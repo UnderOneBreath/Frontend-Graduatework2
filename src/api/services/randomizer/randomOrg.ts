@@ -1,27 +1,6 @@
 import axios from "axios";
-
-const ENDPOINT = "https://api.random.org/json-rpc/4/invoke";
-
-interface JsonRpcResponse {
-	jsonrpc: "2.0";
-	id: number;
-	result?: {
-		random: {
-			data: number[];
-			completionTime: string;
-		};
-		bitsUsed: number;
-		bitsLeft: number;
-		requestsLeft: number;
-		advisoryDelay: number;
-	};
-	error?: { code: number; message: string };
-}
-
-export interface RandomOrgDrawResult {
-	winningSerials: number[];
-	rawResponse: unknown;
-}
+import type{ JsonRpcResponse, RandomOrgDrawResult } from "@/api/types";
+import { RANDOMIZER_SERVICE_RANOM_ORG } from "@/../api.config";
 
 export async function drawWithRandomOrg(
 	prizesCount: number,
@@ -49,7 +28,7 @@ export async function drawWithRandomOrg(
 		id: Date.now(),
 	};
 
-	const res = await axios.post<JsonRpcResponse>(ENDPOINT, body, {
+	const res = await axios.post<JsonRpcResponse>(RANDOMIZER_SERVICE_RANOM_ORG, body, {
 		headers: { "Content-Type": "application/json" },
 		timeout: 15000,
 	});

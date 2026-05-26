@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Loader2, Ticket } from "lucide-react";
+import { ArrowRight, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LotteryResponse, TicketResponse } from "@/api/types/lottery.types";
 import { LotteryStatus } from "@/api/types/lottery.types";
-import { buyTickets } from "@/api/services/lottery";
+import type { CompanyResponse } from "@/api/types/company.types";
+import { LotteryBookingForm } from "@/components/lottery/LotteryBookingForm";
 
 interface LotteryPrimaryCTAProps {
 	lottery: LotteryResponse;
@@ -13,6 +13,7 @@ interface LotteryPrimaryCTAProps {
 	isAuthenticated: boolean;
 	userId: string | null;
 	isOwner: boolean;
+	organizer: CompanyResponse | null;
 	onParticipated: () => void;
 }
 
@@ -28,11 +29,10 @@ export function LotteryPrimaryCTA({
 	isAuthenticated,
 	userId,
 	isOwner,
+	organizer,
 	onParticipated,
 }: LotteryPrimaryCTAProps) {
 	const navigate = useNavigate();
-	const [busy, setBusy] = useState(false);
-	const [feedback, setFeedback] = useState<string | null>(null);
 
 	const isActive = lottery.status === LotteryStatus.Active;
 	const isFull = paidCount >= lottery.max_entries;
@@ -74,44 +74,23 @@ export function LotteryPrimaryCTA({
 		);
 	}
 
-	const participate = async () => {
-		if (!userId) return;
-		const vacant = tickets.find((t) => !t.user_id);
-		if (!vacant) {
-			setFeedback("Свободных билетов нет");
-			return;
-		}
-		setBusy(true);
-		setFeedback(null);
-		try {
-			await buyTickets(lottery.id, { ticket_ids: [vacant.id], user_id: userId });
-			setFeedback(`Вы участвуете, билет №${vacant.serial_number}`);
-			onParticipated();
-		} catch (e: unknown) {
-			const msg = e instanceof Error ? e.message : "Не удалось оформить участие";
-			setFeedback(msg);
-		} finally {
-			setBusy(false);
-		}
-	};
+	if (!userId) return null;
+
+	const trigger = (
+		<Button size="lg" disabled={isFull}>
+			<Ticket className="size-4" />
+			{isFull ? "Мест больше нет" : "Купить билеты"}
+		</Button>
+	);
 
 	return (
-		<div className="flex flex-col gap-2">
-			<Button
-				size="lg"
-				disabled={busy || isFull}
-				onClick={participate}
-			>
-				{busy ? (
-					<Loader2 className="size-4 animate-spin" />
-				) : (
-					<Ticket className="size-4" />
-				)}
-				{isFull ? "Мест больше нет" : "Участвовать"}
-			</Button>
-			{feedback && (
-				<p className="text-xs text-muted-foreground">{feedback}</p>
-			)}
-		</div>
+		<LotteryBookingForm
+			lottery={lottery}
+			tickets={tickets}
+			organizer={organizer}
+			userId={userId}
+			onBooked={onParticipated}
+			trigger={trigger}
+		/>
 	);
 }

@@ -5,6 +5,8 @@ import type {
 	PrizeResponse,
 	TicketResponse,
 	TicketStatus,
+	BulkCreateTicketsBody,
+	BuyTicketsBody,
 } from "@/api/types/lottery.types";
 
 import type { BackendResponse } from "@/api/types/common.types";
@@ -60,11 +62,6 @@ export async function getWinnersByLottery(lotteryId: string): Promise<TicketResp
 	return res.data.data;
 }
 
-export interface BuyTicketsBody {
-	ticket_ids: string[];
-	user_id: string;
-}
-
 export async function buyTickets(lotteryId: string, body: BuyTicketsBody): Promise<TicketResponse[]> {
 	const res = await apiClient.patch<BackendResponse<TicketResponse[]>>(
 		API_ROUTES.tickets.buy(lotteryId),
@@ -85,6 +82,14 @@ export async function changeTicketStatus(ticketId: string, status: TicketStatus)
 	const res = await apiClient.patch<BackendResponse<TicketResponse>>(
 		API_ROUTES.tickets.changeStatus(ticketId),
 		{ status },
+	);
+	return res.data.data;
+}
+
+export async function bulkCreateTickets(body: BulkCreateTicketsBody): Promise<TicketResponse[]> {
+	const res = await apiClient.post<BackendResponse<TicketResponse[]>>(
+		API_ROUTES.tickets.bulkCreate,
+		body,
 	);
 	return res.data.data;
 }

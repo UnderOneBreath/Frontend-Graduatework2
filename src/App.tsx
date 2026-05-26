@@ -9,6 +9,7 @@ import ParticipationsView from "@/components/dashboard/personal/ParticipationsVi
 import NotificationsView from "@/components/dashboard/personal/NotificationsView";
 import AccountView from "@/components/dashboard/personal/AccountView";
 import DrawsView from "@/components/dashboard/company/DrawsView";
+import BookingsView from "@/components/dashboard/company/BookingsView";
 import AnalyticsView from "@/components/dashboard/company/AnalyticsView";
 import SettingsView from "@/components/dashboard/company/SettingsView";
 import ApplicationsView from "@/components/admin/ApplicationsView";
@@ -43,6 +44,7 @@ function App() {
 							<Route path="notifications" element={<NotificationsView />} />
 							<Route path="account" element={<AccountView />} />
 							<Route path="draws" element={<DrawsView />} />
+							<Route path="bookings" element={<BookingsView />} />
 							<Route path="analytics" element={<AnalyticsView />} />
 							<Route path="settings" element={<SettingsView />} />
 						</Route>

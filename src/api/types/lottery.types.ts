@@ -90,7 +90,7 @@ export interface TicketResponse {
 	purchase_date: string; // ISO datetime
 	is_winner: boolean;
 	price: number;
-	serial_number: number;
+	serial_number: string;
 	lottery_id: string;
 	user_id: string;
 	prize_id?: string | null; // set when ticket wins a prize
@@ -103,3 +103,13 @@ export interface TicketCreateRequest {
 	price: number;
 }
 
+export interface BulkCreateTicketsBody {
+	price: number;
+	lottery_id: string;
+	number: number;
+}
+
+export interface BuyTicketsBody {
+	ticket_ids: string[];
+	user_id: string;
+}

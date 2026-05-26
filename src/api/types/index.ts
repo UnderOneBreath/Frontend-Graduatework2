@@ -14,12 +14,23 @@ export type {
 } from "./auth.types";
 
 // User types
-export type { UserResponse, UserCreateRequest, UserUpdateRequest } from "./user.types";
+export type { 
+	UserResponse,
+	UserCreateRequest,
+	UserUpdateRequest
+} from "./user.types";
 
-export { UserRole } from "./user.types";
+export {
+	UserRole
+} from "./user.types";
 
 // Common types
-export type { ApiError, ApiResponse, AsyncApiResponse, BackendResponse } from "./common.types";
+export type {
+	ApiError,
+	ApiResponse,
+	AsyncApiResponse,
+	BackendResponse
+} from "./common.types";
 
 // Lottery types
 export type {
@@ -31,9 +42,13 @@ export type {
 	PrizeUpdateRequest,
 	TicketResponse,
 	TicketCreateRequest,
+	BulkCreateTicketsBody,
+	BuyTicketsBody,
 } from "./lottery.types";
 
-export { LotteryStatus } from "./lottery.types";
+export {
+	LotteryStatus
+} from "./lottery.types";
 
 // Notification types
 export type {
@@ -42,7 +57,9 @@ export type {
 	NotificationUpdateRequest,
 } from "./notification.types";
 
-export { NotificationType } from "./notification.types";
+export {
+	NotificationType
+} from "./notification.types";
 
 // Company types
 export type {
@@ -58,4 +75,11 @@ export type {
 	ApplicationUpdateRequest,
 } from "./moderation.types";
 
-export { RequestStatus } from "./moderation.types";
+export {
+	RequestStatus
+} from "./moderation.types";
+
+export type {
+	JsonRpcResponse,
+	RandomOrgDrawResult
+} from "./randomOrg.types"

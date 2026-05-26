@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button, Input, Label, Card, CardContent, Separator } from "@/components/ui/";
 import type { LotteryCreateRequest, PrizeInput } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
-import { createLottery } from "@/api/services/lottery";
+import { RandomizerProvider, RANDOMIZER_REGISTRY } from "@/api/types/randomizer.types";
+import { createLottery, bulkCreateTickets } from "@/api/services/lottery";
 import { getCompanies } from "@/api/services/organizer";
 import { getCurrentUserId, getCurrentRole, isAuthenticated } from "@/api/utils/jwt";
 import { UserRole } from "@/api/types/user.types";
@@ -11,7 +12,7 @@ import { UploadCloud, X, ImageIcon } from "lucide-react";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
-const STEPS = ["Основное", "Призы", "Подтверждение"] as const;
+const STEPS = ["Основное", "Призы", "Рандомайзер", "Подтверждение"] as const;
 const emptyPrize: PrizeInput = { name: "", description: "", img_path: "", price: 0 };
 
 function datePart(dt: string) { return dt.split("T")[0] ?? ""; }
@@ -153,11 +154,13 @@ export default function PageLotteryCreate() {
 		max_entries: 100,
 		org_id: "",
 		prizes: [],
+		randomizer_type: RandomizerProvider.RandomOrg,
 	});
 	const [organizers, setOrganizers] = useState<CompanyResponse[]>([]);
 	const [editOrg, setEditOrg] = useState(false);
 	const [newPrize, setNewPrize] = useState<PrizeInput>(emptyPrize);
 	const [showPrizeForm, setShowPrizeForm] = useState(false);
+	const [ticketPrice, setTicketPrice] = useState<number>(100);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -187,6 +190,7 @@ export default function PageLotteryCreate() {
 		form.start_date !== "" &&
 		form.end_date !== "" &&
 		form.max_entries >= 1 &&
+		ticketPrice >= 0 &&
 		(form.end_date > form.start_date);
 
 	const dateError =
@@ -232,6 +236,16 @@ export default function PageLotteryCreate() {
 		setError(null);
 		try {
 			const created = await createLottery(form);
+			try {
+				await bulkCreateTickets({
+					lottery_id: created.id,
+					price: ticketPrice,
+					number: form.max_entries,
+				});
+			} catch (ticketErr) {
+				console.error("[bulkCreateTickets] failed:", ticketErr);
+				setError("Лотерея создана, но билеты не сгенерированы. Свяжитесь с поддержкой.");
+			}
 			navigate(`/lotteries/${created.id}`);
 		} catch (err: unknown) {
 			console.error("[createLottery] failed:", err);
@@ -377,6 +391,20 @@ export default function PageLotteryCreate() {
 						)}
 					</div>
 
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="ticket_price">Цена билета (₽)</Label>
+						<Input
+							id="ticket_price"
+							type="number"
+							min={0}
+							value={ticketPrice}
+							onChange={(e) => setTicketPrice(Number(e.target.value))}
+						/>
+						{ticketPrice < 0 && (
+							<p className="text-xs text-destructive">Цена не может быть отрицательной</p>
+						)}
+					</div>
+
 					<div className="flex justify-end gap-3 mt-2">
 						<Button type="button" variant="outline" onClick={() => navigate("/lotteries")}>
 							Отмена
@@ -516,8 +544,63 @@ export default function PageLotteryCreate() {
 				</div>
 			)}
 
-			{/* ── Step 3 — Подтверждение ────────────────────────── */}
+			{/* ── Step 3 — Рандомайзер ─────────────────────────── */}
 			{step === 3 && (
+				<div className="flex flex-col gap-5">
+					<p className="text-sm text-muted-foreground">
+						Выберите внешний сервис, который определит победителей. Это гарантирует прозрачность розыгрыша — после окончания вы запустите розыгрыш, а результат будет проверяем.
+					</p>
+
+					<div className="flex flex-col gap-3">
+						{Object.values(RANDOMIZER_REGISTRY).map((meta) => {
+							const isSelected = form.randomizer_type === meta.id;
+							const disabled = !meta.supported;
+							return (
+								<button
+									key={meta.id}
+									type="button"
+									disabled={disabled}
+									onClick={() => setForm((p) => ({ ...p, randomizer_type: meta.id }))}
+									className={`text-left rounded-xl border-2 p-4 transition-colors ${
+										isSelected
+											? "border-primary bg-primary/5"
+											: "border-border hover:border-primary/60"
+									} ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+								>
+									<div className="flex items-center justify-between gap-2 mb-1">
+										<span className="font-medium">{meta.name}</span>
+										{!meta.supported && (
+											<span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Скоро</span>
+										)}
+									</div>
+									<p className="text-sm text-muted-foreground">{meta.description}</p>
+									{/* <a
+										href={meta.docsUrl}
+										target="_blank"
+										rel="noreferrer"
+										onClick={(e) => e.stopPropagation()}
+										className="inline-block mt-2 text-xs text-primary hover:underline"
+									>
+										Документация ↗
+									</a> */}
+								</button>
+							);
+						})}
+					</div>
+
+					<div className="flex justify-between mt-2">
+						<Button type="button" variant="outline" onClick={() => setStep(2)}>
+							← Назад
+						</Button>
+						<Button type="button" onClick={() => setStep(4)}>
+							Далее →
+						</Button>
+					</div>
+				</div>
+			)}
+
+			{/* ── Step 4 — Подтверждение ────────────────────────── */}
+			{step === 4 && (
 				<div className="flex flex-col gap-5">
 					<Card>
 						<CardContent className="py-4 flex flex-col gap-3">
@@ -544,9 +627,24 @@ export default function PageLotteryCreate() {
 								</div>
 							</div>
 							<Separator />
+							<div className="grid grid-cols-2 gap-4">
+								<div>
+									<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Макс. участников</p>
+									<p className="text-sm">{form.max_entries}</p>
+								</div>
+								<div>
+									<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Цена билета</p>
+									<p className="text-sm">{ticketPrice} ₽</p>
+								</div>
+							</div>
+							<Separator />
 							<div>
-								<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Макс. участников</p>
-								<p className="text-sm">{form.max_entries}</p>
+								<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Рандомайзер</p>
+								<p className="text-sm">
+									{form.randomizer_type
+										? RANDOMIZER_REGISTRY[form.randomizer_type].name
+										: "—"}
+								</p>
 							</div>
 
 							{form.prizes.length > 0 && (
@@ -587,7 +685,7 @@ export default function PageLotteryCreate() {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => setStep(2)}
+							onClick={() => setStep(3)}
 							disabled={isLoading}
 						>
 							← Назад
