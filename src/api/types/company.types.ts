@@ -14,6 +14,11 @@ export interface CompanyResponse {
 	address: string;
 	logo: string | null;
 	email: string;
+	payment_card?: string | null;
+	payment_account?: string | null;
+	bank_name?: string | null;
+	bik?: string | null;
+	payment_note?: string | null;
 	employees: OrgUserLink[];
 }
 
@@ -36,4 +41,9 @@ export interface CompanyUpdateRequest {
 	address?: string;
 	logo?: string;
 	email?: string;
+	payment_card?: string | null;
+	payment_account?: string | null;
+	bank_name?: string | null;
+	bik?: string | null;
+	payment_note?: string | null;
 }

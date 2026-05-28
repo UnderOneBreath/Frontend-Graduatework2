@@ -53,8 +53,8 @@ export async function getAllTickets(): Promise<TicketResponse[]> {
 }
 
 export async function getTicketsByUser(userId: string): Promise<TicketResponse[]> {
-	const all = await getAllTickets();
-	return all.filter((t) => t.user_id === userId);
+	const res = await apiClient.get<BackendResponse<TicketResponse[]>>(API_ROUTES.tickets.byUser(userId));
+	return res.data.data;
 }
 
 export async function getWinnersByLottery(lotteryId: string): Promise<TicketResponse[]> {

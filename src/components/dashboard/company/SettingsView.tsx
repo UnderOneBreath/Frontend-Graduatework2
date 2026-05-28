@@ -18,6 +18,11 @@ interface DraftState {
 	phone: string;
 	address: string;
 	email: string;
+	payment_card: string;
+	payment_account: string;
+	bank_name: string;
+	bik: string;
+	payment_note: string;
 }
 
 function toDraft(c: CompanyResponse): DraftState {
@@ -28,6 +33,11 @@ function toDraft(c: CompanyResponse): DraftState {
 		phone: c.phone,
 		address: c.address,
 		email: c.email,
+		payment_card: c.payment_card ?? "",
+		payment_account: c.payment_account ?? "",
+		bank_name: c.bank_name ?? "",
+		bik: c.bik ?? "",
+		payment_note: c.payment_note ?? "",
 	};
 }
 
@@ -54,7 +64,7 @@ export default function SettingsView() {
 		);
 	}
 
-	function handleChange(e: ChangeEvent<HTMLInputElement>) {
+	function handleChange(e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>) {
 		const { name, value } = e.target;
 		setDraft((p) => (p ? { ...p, [name]: value } : p));
 	}
@@ -68,7 +78,12 @@ export default function SettingsView() {
 		draft.ogrn !== String(company.ogrn) ||
 		draft.phone !== company.phone ||
 		draft.address !== company.address ||
-		draft.email !== company.email;
+		draft.email !== company.email ||
+		draft.payment_card !== (company.payment_card ?? "") ||
+		draft.payment_account !== (company.payment_account ?? "") ||
+		draft.bank_name !== (company.bank_name ?? "") ||
+		draft.bik !== (company.bik ?? "") ||
+		draft.payment_note !== (company.payment_note ?? "");
 	const canSave = dirty && draft.name.trim() !== "" && innValid && ogrnValid && emailValid && !saving;
 
 	async function save() {
@@ -83,6 +98,11 @@ export default function SettingsView() {
 				phone: draft.phone.trim(),
 				address: draft.address.trim(),
 				email: draft.email.trim(),
+				payment_card: draft.payment_card.trim() || null,
+				payment_account: draft.payment_account.trim() || null,
+				bank_name: draft.bank_name.trim() || null,
+				bik: draft.bik.trim() || null,
+				payment_note: draft.payment_note.trim() || null,
 			};
 			await updateCompany(company.id, body);
 			refetchCompanies();
@@ -108,6 +128,7 @@ export default function SettingsView() {
 			<Tabs defaultValue="details">
 				<TabsList>
 					<TabsTrigger value="details">Реквизиты</TabsTrigger>
+					<TabsTrigger value="payment">Оплата</TabsTrigger>
 					<TabsTrigger value="members">Участники</TabsTrigger>
 				</TabsList>
 
@@ -187,6 +208,97 @@ export default function SettingsView() {
 									name="address"
 									value={draft.address}
 									onChange={handleChange}
+								/>
+							</div>
+
+							{error ? <p className="text-sm text-destructive">{error}</p> : null}
+							{savedAt && !dirty ? (
+								<p className="text-sm text-muted-foreground">Сохранено</p>
+							) : null}
+
+							<div className="flex justify-end gap-2 border-t pt-4">
+								<Button
+									variant="outline"
+									onClick={() => setDraft(toDraft(company))}
+									disabled={!dirty || saving}
+								>
+									Сбросить
+								</Button>
+								<Button onClick={save} disabled={!canSave}>
+									{saving ? "..." : "Сохранить"}
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="payment" className="mt-4">
+					<Card>
+						<CardContent className="flex flex-col gap-5">
+							<p className="text-sm text-muted-foreground">
+								Эти данные увидит участник после бронирования билета, чтобы перевести
+								оплату напрямую. Заполните хотя бы один способ.
+							</p>
+
+							<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+								<div className="flex flex-col gap-2">
+									<Label htmlFor="payment_card">Номер карты</Label>
+									<Input
+										id="payment_card"
+										name="payment_card"
+										value={draft.payment_card}
+										onChange={handleChange}
+										placeholder="2202 2050 1234 5678"
+										className="font-mono tracking-tight"
+									/>
+								</div>
+								<div className="flex flex-col gap-2">
+									<Label htmlFor="payment_account">Расчётный счёт</Label>
+									<Input
+										id="payment_account"
+										name="payment_account"
+										value={draft.payment_account}
+										onChange={handleChange}
+										placeholder="40702810..."
+										className="font-mono tracking-tight"
+									/>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+								<div className="flex flex-col gap-2">
+									<Label htmlFor="bank_name">Банк</Label>
+									<Input
+										id="bank_name"
+										name="bank_name"
+										value={draft.bank_name}
+										onChange={handleChange}
+										placeholder="Тинькофф / Сбербанк / ..."
+									/>
+								</div>
+								<div className="flex flex-col gap-2">
+									<Label htmlFor="bik">БИК</Label>
+									<Input
+										id="bik"
+										name="bik"
+										value={draft.bik}
+										onChange={handleChange}
+										placeholder="044525225"
+										className="font-mono tracking-tight"
+									/>
+								</div>
+							</div>
+
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="payment_note">Комментарий к оплате</Label>
+								<textarea
+									id="payment_note"
+									name="payment_note"
+									value={draft.payment_note}
+									onChange={handleChange}
+									placeholder="Например: «Перевод по номеру телефона на Тинькофф», «В назначении укажите номер билета»"
+									rows={3}
+									className="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
 								/>
 							</div>
 

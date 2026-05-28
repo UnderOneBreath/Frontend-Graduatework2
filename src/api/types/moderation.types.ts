@@ -12,6 +12,17 @@ export interface OrganizerApplicationCompany {
 	phone: string;
 	address: string;
 	email: string;
+	logo?: string | null;
+}
+
+export interface ApplicationCreateRequest {
+	name: string;
+	inn: number;
+	ogrn: number;
+	phone: string;
+	address: string;
+	email: string;
+	logo?: string | null;
 }
 
 export interface OrganizerApplication {

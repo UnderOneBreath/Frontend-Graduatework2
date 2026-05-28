@@ -13,3 +13,4 @@ export * from "./tabs";
 export * from "./accordion";
 export * from "./dropdown-menu";
 export * from "./table";
+export * from "./image-upload";

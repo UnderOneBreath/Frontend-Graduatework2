@@ -84,7 +84,6 @@ export default function DashboardSidebar() {
 								<p className="px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
 									Организация
 								</p>
-								{/* TODO: фильтровать по OrgUsersLink.user_id когда бэк начнёт отдавать CompanyResponse.employees — см. src/hooks/useUserCompanies.ts:34 */}
 								<div className="px-3">
 									<OrgSwitcher />
 								</div>

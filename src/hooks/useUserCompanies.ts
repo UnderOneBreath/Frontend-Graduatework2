@@ -31,9 +31,10 @@ export function useUserCompanies(): UseUserCompaniesResult {
 		getCompanies()
 			.then((list) => {
 				if (cancelled) return;
-				// TODO: вернуть фильтр по employees, когда бэк будет отдавать
-				// связи из таблицы orguserslink в поле CompanyResponse.employees.
-				setCompanies(list);
+				const mine = list.filter((c) =>
+					(c.employees ?? []).some((e) => e.user_id === userId),
+				);
+				setCompanies(mine);
 			})
 			.catch((err: unknown) => {
 				if (cancelled) return;

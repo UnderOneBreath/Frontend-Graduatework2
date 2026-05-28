@@ -54,6 +54,7 @@ export interface LotteryUpdateRequest {
 	end_date?: string;
 	max_entries?: number;
 	status?: LotteryStatus;
+	randomizer_result?: RandomizerResult | null;
 }
 
 //Prize

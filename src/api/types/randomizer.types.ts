@@ -1,3 +1,5 @@
+import type { SignedRandomBlock } from "./randomOrg.types";
+
 export const RandomizerProvider = {
 	RandomOrg: "random_org",
 	RandomPicker: "random_picker",
@@ -15,21 +17,30 @@ export interface RandomizerMetadata {
 	supported: boolean;
 }
 
+export interface ParticipantSnapshotEntry {
+	index: number;
+	serial: string;
+	ticketId: string;
+}
+
 export interface RandomizerResult {
 	provider: RandomizerProvider;
 	requestedAt: string;
 	winningSerials: number[];
 	rawResponse: unknown;
 	verifyUrl?: string;
+	signature?: string;
+	signedRandom?: SignedRandomBlock;
+	participantsSnapshot?: ParticipantSnapshotEntry[];
 }
 
 export const RANDOMIZER_REGISTRY: Record<RandomizerProvider, RandomizerMetadata> = {
 	[RandomizerProvider.RandomOrg]: {
 		id: RandomizerProvider.RandomOrg,
 		name: "RANDOM.ORG",
-		description: "Атмосферный шум как источник энтропии. Публичный JSON-RPC API с бесплатным тиром.",
-		docsUrl: "https://api.random.org/json-rpc/4/basic",
-		verifyUrl: "https://api.random.org/dashboard",
+		description: "Атмосферный шум как источник энтропии. Подписанный JSON-RPC API с публичной формой верификации.",
+		docsUrl: "https://api.random.org/json-rpc/4/signing",
+		verifyUrl: "https://api.random.org/signatures/form",
 		supported: true,
 	},
 	[RandomizerProvider.RandomPicker]: {

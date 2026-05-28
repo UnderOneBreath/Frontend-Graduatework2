@@ -2,6 +2,7 @@ import { apiClient } from "@/api/client";
 import { API_ROUTES } from "@/../api.config";
 import type { BackendResponse } from "@/api/types";
 import type {
+	ApplicationCreateRequest,
 	ApplicationUpdateRequest,
 	OrganizerApplication,
 	RequestStatus,
@@ -98,6 +99,39 @@ export async function listApplications(
 	);
 	const items = unwrap(res);
 	return status ? items.filter((i) => i.status === status) : items;
+}
+
+export async function getMyApplications(userId: string): Promise<OrganizerApplication[]> {
+	if (USE_MOCK) {
+		return seedMock().filter((i) => i.user_id === userId);
+	}
+	const res = await apiClient.get<BackendResponse<OrganizerApplication[]>>(
+		API_ROUTES.requests.byUser(userId),
+	);
+	return unwrap(res);
+}
+
+export async function submitApplication(
+	payload: ApplicationCreateRequest,
+): Promise<OrganizerApplication> {
+	if (USE_MOCK) {
+		const items = seedMock();
+		const app: OrganizerApplication = {
+			id: `mock-app-${items.length + 1}`,
+			user_id: "mock-current-user",
+			company_data: { ...payload },
+			status: "pending",
+			rejection_reason: null,
+			created_at: new Date().toISOString(),
+		};
+		items.unshift(app);
+		return app;
+	}
+	const res = await apiClient.post<BackendResponse<OrganizerApplication>>(
+		API_ROUTES.requests.list,
+		payload,
+	);
+	return unwrap(res);
 }
 
 export async function getApplication(id: string): Promise<OrganizerApplication> {

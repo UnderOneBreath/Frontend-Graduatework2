@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import type { CompanyCreateRequest } from "@/api/types/company.types";
-import { createCompany } from "@/api/services/organizer";
+import type { ApplicationCreateRequest } from "@/api/types/moderation.types";
+import { submitApplication } from "@/api/services/moderation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,6 @@ interface FormState {
 	phone: string;
 	address: string;
 	email: string;
-	password: string;
 	logo: string;
 }
 
@@ -27,7 +26,6 @@ const empty: FormState = {
 	phone: "",
 	address: "",
 	email: "",
-	password: "",
 	logo: "",
 };
 
@@ -116,26 +114,24 @@ export default function ApplyCompanyForm({ onSubmitted }: ApplyCompanyFormProps)
 		/^\d{13,15}$/.test(form.ogrn) &&
 		form.phone.trim() !== "" &&
 		form.address.trim() !== "" &&
-		/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
-		form.password.length >= 6;
+		/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 
 	async function handleSubmit(e: { preventDefault: () => void }) {
 		e.preventDefault();
 		if (!valid || loading) return;
-		const payload: CompanyCreateRequest = {
+		const payload: ApplicationCreateRequest = {
 			name: form.name.trim(),
 			inn: Number(form.inn),
 			ogrn: Number(form.ogrn),
 			phone: form.phone.trim(),
 			address: form.address.trim(),
 			email: form.email.trim(),
-			password: form.password,
 			...(form.logo ? { logo: form.logo } : {}),
 		};
 		setLoading(true);
 		setError(null);
 		try {
-			await createCompany(payload);
+			await submitApplication(payload);
 			onSubmitted();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Не удалось отправить заявку");
@@ -225,18 +221,6 @@ export default function ApplyCompanyForm({ onSubmitted }: ApplyCompanyFormProps)
 					value={form.address}
 					onChange={handleChange}
 					placeholder="Город, улица, дом"
-				/>
-			</div>
-
-			<div className="flex flex-col gap-2">
-				<Label htmlFor="password">Пароль для входа от имени компании</Label>
-				<Input
-					id="password"
-					name="password"
-					type="password"
-					value={form.password}
-					onChange={handleChange}
-					placeholder="Минимум 6 символов"
 				/>
 			</div>
 

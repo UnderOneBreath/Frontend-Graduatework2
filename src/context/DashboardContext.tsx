@@ -1,9 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentUser } from "@/api/services/auth";
+import { refreshToken } from "@/api/services/auth/refresh";
+import { scheduleRefreshFromToken } from "@/api/auth/tokenRefresher";
 import type { CompanyResponse } from "@/api/types/company.types";
 import type { UserResponse } from "@/api/types/user.types";
 import { useUserCompanies } from "@/hooks/useUserCompanies";
-import { getCurrentUserId } from "@/api/utils/jwt";
+import { useMyOrganizerApplication } from "@/hooks/useMyOrganizerApplication";
+import { getCurrentRole, getCurrentUserId, persistTokenInfo } from "@/api/utils/jwt";
+import { UserRole } from "@/api/types/user.types";
 
 type ActiveContext = { kind: "personal" } | { kind: "company"; company: CompanyResponse };
 
@@ -53,9 +57,39 @@ const DashboardContext = createContext<DashboardContextValue | null>(null);
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
 	const { companies, loading: loadingCompanies, error: companiesError, refetch: refetchCompanies } =
 		useUserCompanies();
+	const { application } = useMyOrganizerApplication();
 	const [user, setUser] = useState<UserResponse | null>(null);
 	const [loadingUser, setLoadingUser] = useState(true);
 	const [persisted, setPersisted] = useState<string>(readInitialPersisted);
+	const [roleVersion, setRoleVersion] = useState(0);
+	const prevApplicationStatusRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		const prev = prevApplicationStatusRef.current;
+		const next = application?.status ?? null;
+		prevApplicationStatusRef.current = next;
+
+		if (prev !== "pending" || next !== "accepted") return;
+		if (getCurrentRole() === UserRole.organizer) return;
+
+		let cancelled = false;
+		(async () => {
+			try {
+				const { token } = await refreshToken();
+				if (cancelled) return;
+				persistTokenInfo(token);
+				scheduleRefreshFromToken(token);
+				setRoleVersion((v) => v + 1);
+				refetchCompanies();
+			} catch (err) {
+				console.error("[DashboardContext] post-approval refresh failed:", err);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [application, refetchCompanies]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -106,6 +140,9 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 			loadingUser,
 			setUser: setUserExternal,
 		}),
+		// roleVersion инкрементится после обновления роли в localStorage, чтобы
+		// потребители (DashboardSidebar читает getCurrentRole()) перерисовались.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[
 			active,
 			setPersonal,
@@ -117,6 +154,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 			user,
 			loadingUser,
 			setUserExternal,
+			roleVersion,
 		]
 	);
 

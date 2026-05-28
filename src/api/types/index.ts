@@ -81,5 +81,8 @@ export {
 
 export type {
 	JsonRpcResponse,
+	SignedJsonRpcResponse,
+	SignedRandomBlock,
+	RandomOrgUserData,
 	RandomOrgDrawResult
 } from "./randomOrg.types"

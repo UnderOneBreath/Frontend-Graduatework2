@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2, Ticket, CheckCircle2, Phone, Mail } from "lucide-react";
 import {
 	Button,
@@ -16,6 +17,7 @@ import type { LotteryResponse, TicketResponse } from "@/api/types/lottery.types"
 import { TicketStatus } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
 import { buyTickets } from "@/api/services/lottery";
+import OrganizerPaymentCard from "@/components/lottery/OrganizerPaymentCard";
 
 interface LotteryBookingFormProps {
 	lottery: LotteryResponse;
@@ -36,6 +38,7 @@ export function LotteryBookingForm({
 	onBooked,
 	trigger,
 }: LotteryBookingFormProps) {
+	const navigate = useNavigate();
 	const [open, setOpen] = useState(false);
 	const [view, setView] = useState<View>("select");
 	const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -233,15 +236,34 @@ export function LotteryBookingForm({
 								</div>
 							)}
 
+							{organizer && <OrganizerPaymentCard organizer={organizer} />}
+
 							<p className="text-xs text-muted-foreground">
 								Без подтверждения оплаты бронь будет автоматически снята через 24 часа.
 							</p>
 						</div>
 
 						<SheetFooter className="border-t">
-							<Button type="button" className="w-full" onClick={() => setOpen(false)}>
-								Закрыть
-							</Button>
+							<div className="flex w-full flex-col gap-2">
+								<Button
+									type="button"
+									className="w-full"
+									onClick={() => {
+										setOpen(false);
+										navigate("/dashboard/participations");
+									}}
+								>
+									Посмотреть мои билеты
+								</Button>
+								<Button
+									type="button"
+									variant="outline"
+									className="w-full"
+									onClick={() => setOpen(false)}
+								>
+									Закрыть
+								</Button>
+							</div>
 						</SheetFooter>
 					</>
 				)}

@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { login } from "@/api/services/auth";
 import type { LoginRequest } from "@/api/types";
+import { getCurrentRole } from "@/api/utils/jwt";
+import { UserRole } from "@/api/types/user.types";
 
 export function LoginForm({
   className,
@@ -40,7 +42,12 @@ export function LoginForm({
     setLoading(true);
     try {
       await login(form);
-      navigate("/profile", { replace: true });
+      const role = getCurrentRole();
+      const destination =
+        role === UserRole.admin || role === UserRole.moderator
+          ? "/admin"
+          : "/profile";
+      navigate(destination, { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Ошибка авторизации");
       setLoading(false);

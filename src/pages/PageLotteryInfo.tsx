@@ -8,7 +8,7 @@ import { updateLottery, setTicketWinner } from "@/api/services/lottery";
 import { drawWinners } from "@/api/services/randomizer";
 import { LotteryStatus, TicketStatus } from "@/api/types/lottery.types";
 import { RandomizerProvider } from "@/api/types/randomizer.types";
-import type { RandomizerResult } from "@/api/types/randomizer.types";
+import { sha256Hex } from "@/lib/hash";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LotteryBreadcrumbs } from "@/components/lottery/LotteryBreadcrumbs";
@@ -22,16 +22,6 @@ import { LotteryShareButton } from "@/components/lottery/LotteryShareButton";
 import { LotteryPrimaryCTA } from "@/components/lottery/LotteryPrimaryCTA";
 import { LotteryDetailSkeleton } from "@/components/lottery/LotteryDetailSkeleton";
 import { LotteryFairnessProof } from "@/components/lottery/LotteryFairnessProof";
-
-function loadProofFromStorage(lotteryId: string | undefined): RandomizerResult | null {
-	if (!lotteryId) return null;
-	try {
-		const raw = sessionStorage.getItem(`lotteryProof_${lotteryId}`);
-		return raw ? (JSON.parse(raw) as RandomizerResult) : null;
-	} catch {
-		return null;
-	}
-}
 
 export default function PageLotteryInfo() {
 	const { id } = useParams<{ id: string }>();
@@ -58,7 +48,6 @@ export default function PageLotteryInfo() {
 	const [publishError, setPublishError] = useState<string | null>(null);
 	const [drawing, setDrawing] = useState(false);
 	const [drawError, setDrawError] = useState<string | null>(null);
-	const [proof, setProof] = useState<RandomizerResult | null>(() => loadProofFromStorage(id));
 
 	if (detail.isLoading) {
 		return <LotteryDetailSkeleton />;
@@ -98,8 +87,6 @@ export default function PageLotteryInfo() {
 		new Date(lottery.end_date) <= new Date() &&
 		winners.length === 0;
 
-	const effectiveProof = lottery.randomizer_result ?? proof;
-
 	async function handleDraw() {
 		if (drawing) return;
 		setDrawing(true);
@@ -111,17 +98,34 @@ export default function PageLotteryInfo() {
 					`Недостаточно оплаченных участников: ${paid.length} из ${prizes.length}`,
 				);
 			}
+			// Детерминированный порядок: сортируем по ticket.id (UUID), чтобы и
+			// хэш списка, и индексы winningSerials указывали на одних и тех же людей
+			// независимо от того, в каком порядке тикеты пришли из БД.
+			const sortedPaid = [...paid].sort((a, b) => a.id.localeCompare(b.id));
+			const snapshot = sortedPaid.map((t, i) => ({
+				index: i + 1,
+				serial: t.serial_number,
+				ticketId: t.id,
+			}));
+			const participantsHash = await sha256Hex(
+				JSON.stringify(snapshot.map((e) => e.serial)),
+			);
+
 			const provider = lottery.randomizer_type ?? RandomizerProvider.RandomOrg;
-			const result = await drawWinners(provider, prizes.length, paid.length);
+			const result = await drawWinners(provider, prizes.length, sortedPaid.length, {
+				lotteryId: lottery.id,
+				participantsHash,
+			});
 
 			for (let i = 0; i < prizes.length; i++) {
-				const ticket = paid[result.winningSerials[i] - 1];
+				const ticket = sortedPaid[result.winningSerials[i] - 1];
 				await setTicketWinner(ticket.id, prizes[i].id);
 			}
 
-			await updateLottery(lottery.id, { status: LotteryStatus.Completed });
-			sessionStorage.setItem(`lotteryProof_${lottery.id}`, JSON.stringify(result));
-			setProof(result);
+			await updateLottery(lottery.id, {
+				status: LotteryStatus.Completed,
+				randomizer_result: { ...result, participantsSnapshot: snapshot },
+			});
 			refetch();
 		} catch (err: unknown) {
 			console.error("[handleDraw] failed:", err);
@@ -248,7 +252,7 @@ export default function PageLotteryInfo() {
 				/>
 			</section>
 
-			{effectiveProof && (
+			{lottery.randomizer_result && (
 				<>
 					<Separator />
 					<section id="fairness" className="flex flex-col gap-4 animate-in fade-in duration-500">
@@ -256,7 +260,7 @@ export default function PageLotteryInfo() {
 							title="Проверка честности"
 							description="Как был определён победитель"
 						/>
-						<LotteryFairnessProof result={effectiveProof} />
+						<LotteryFairnessProof result={lottery.randomizer_result} />
 					</section>
 				</>
 			)}

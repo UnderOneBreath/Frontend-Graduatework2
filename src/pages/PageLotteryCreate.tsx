@@ -1,6 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Input, Label, Card, CardContent, Separator } from "@/components/ui/";
+import { ChevronDown, ImageIcon, Trash2 } from "lucide-react";
+import {
+	Button,
+	Card,
+	CardContent,
+	ImageUpload,
+	Input,
+	Label,
+	Separator,
+} from "@/components/ui";
 import type { LotteryCreateRequest, PrizeInput } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
 import { RandomizerProvider, RANDOMIZER_REGISTRY } from "@/api/types/randomizer.types";
@@ -8,96 +17,24 @@ import { createLottery, bulkCreateTickets } from "@/api/services/lottery";
 import { getCompanies } from "@/api/services/organizer";
 import { getCurrentUserId, getCurrentRole, isAuthenticated } from "@/api/utils/jwt";
 import { UserRole } from "@/api/types/user.types";
-import { UploadCloud, X, ImageIcon } from "lucide-react";
 
-// ─── helpers ───────────────────────────────────────────────────────────────
-
-const STEPS = ["Основное", "Призы", "Рандомайзер", "Подтверждение"] as const;
 const emptyPrize: PrizeInput = { name: "", description: "", img_path: "", price: 0 };
 
-function datePart(dt: string) { return dt.split("T")[0] ?? ""; }
-function timePart(dt: string) { return dt.split("T")[1] ?? ""; }
+function datePart(dt: string) {
+	return dt.split("T")[0] ?? "";
+}
+function timePart(dt: string) {
+	return dt.split("T")[1] ?? "";
+}
 function joinDatetime(date: string, time: string) {
 	if (!date) return "";
 	return `${date}T${time || "00:00"}`;
 }
-
 function formatPreview(dt: string) {
 	if (!dt) return "—";
 	const [date, time] = dt.split("T");
 	return `${date} ${time ?? ""}`.trim();
 }
-
-// ─── ImageUpload component ──────────────────────────────────────────────────
-
-interface ImageUploadProps {
-	value: string;
-	onChange: (base64: string) => void;
-	onClear: () => void;
-}
-
-function ImageUpload({ value, onChange, onClear }: ImageUploadProps) {
-	const inputRef = useRef<HTMLInputElement>(null);
-	const [dragOver, setDragOver] = useState(false);
-
-	function processFile(file: File) {
-		if (!file.type.startsWith("image/")) return;
-		const reader = new FileReader();
-		reader.onload = (e) => onChange(e.target?.result as string);
-		reader.readAsDataURL(file);
-	}
-
-	function handleDrop(e: React.DragEvent) {
-		e.preventDefault();
-		setDragOver(false);
-		const file = e.dataTransfer.files[0];
-		if (file) processFile(file);
-	}
-
-	if (value) {
-		return (
-			<div className="relative rounded-xl overflow-hidden border border-border h-40 bg-muted">
-				<img src={value} alt="Превью" className="w-full h-full object-cover" />
-				<button
-					type="button"
-					onClick={onClear}
-					className="absolute top-2 right-2 bg-background/80 hover:bg-background rounded-full p-1 transition-colors"
-				>
-					<X className="w-4 h-4" />
-				</button>
-			</div>
-		);
-	}
-
-	return (
-		<div
-			className={`border-2 border-dashed rounded-xl h-40 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
-				dragOver
-					? "border-primary bg-primary/5"
-					: "border-border hover:border-primary/60 hover:bg-muted/50"
-			}`}
-			onClick={() => inputRef.current?.click()}
-			onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-			onDragLeave={() => setDragOver(false)}
-			onDrop={handleDrop}
-		>
-			<input
-				ref={inputRef}
-				type="file"
-				accept="image/*"
-				className="hidden"
-				onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); }}
-			/>
-			<UploadCloud className={`w-8 h-8 ${dragOver ? "text-primary" : "text-muted-foreground"}`} />
-			<p className="text-sm text-muted-foreground text-center px-4">
-				<span className="text-primary font-medium">Нажмите для загрузки</span> или перетащите файл
-			</p>
-			<p className="text-xs text-muted-foreground">PNG, JPG, WebP до 5 МБ</p>
-		</div>
-	);
-}
-
-// ─── DateTimeInput component ────────────────────────────────────────────────
 
 interface DateTimeInputProps {
 	id: string;
@@ -120,6 +57,7 @@ function DateTimeInput({ id, value, onChange, min }: DateTimeInputProps) {
 			<Input
 				id={`${id}-time`}
 				type="time"
+				lang="ru-RU"
 				value={timePart(value)}
 				onChange={(e) => onChange(joinDatetime(datePart(value), e.target.value))}
 				className="w-28 cursor-pointer"
@@ -127,8 +65,6 @@ function DateTimeInput({ id, value, onChange, min }: DateTimeInputProps) {
 		</div>
 	);
 }
-
-// ─── Main page ──────────────────────────────────────────────────────────────
 
 export default function PageLotteryCreate() {
 	const navigate = useNavigate();
@@ -146,20 +82,16 @@ export default function PageLotteryCreate() {
 		navigate("/organizer/apply", { replace: true });
 	}, [allowed, navigate]);
 
-	const [step, setStep] = useState(1);
 	const [form, setForm] = useState<LotteryCreateRequest>({
 		name: "",
 		start_date: "",
 		end_date: "",
 		max_entries: 100,
 		org_id: "",
-		prizes: [],
+		prizes: [{ ...emptyPrize }],
 		randomizer_type: RandomizerProvider.RandomOrg,
 	});
 	const [organizers, setOrganizers] = useState<CompanyResponse[]>([]);
-	const [editOrg, setEditOrg] = useState(false);
-	const [newPrize, setNewPrize] = useState<PrizeInput>(emptyPrize);
-	const [showPrizeForm, setShowPrizeForm] = useState(false);
 	const [ticketPrice, setTicketPrice] = useState<number>(100);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -177,30 +109,12 @@ export default function PageLotteryCreate() {
 					prev.org_id || mine.length === 0 ? prev : { ...prev, org_id: mine[0].id },
 				);
 			})
-			.catch(() => {}); // список опциональный, ошибка не критична
+			.catch(() => {});
 	}, [allowed]);
 
 	if (!allowed) return null;
 
-	// ── validation ───────────────────────────────────────────────
-
-	const step1Valid =
-		form.name.trim() !== "" &&
-		form.org_id !== "" &&
-		form.start_date !== "" &&
-		form.end_date !== "" &&
-		form.max_entries >= 1 &&
-		ticketPrice >= 0 &&
-		(form.end_date > form.start_date);
-
-	const dateError =
-		form.start_date && form.end_date && form.end_date <= form.start_date
-			? "Дата окончания должна быть позже даты начала"
-			: null;
-
-	// ── handlers ─────────────────────────────────────────────────
-
-	function handleFormChange(e: React.ChangeEvent<HTMLInputElement>) {
+	function handleFormChange(e: ChangeEvent<HTMLInputElement>) {
 		const { name, value } = e.target;
 		setForm((prev) => ({
 			...prev,
@@ -208,30 +122,47 @@ export default function PageLotteryCreate() {
 		}));
 	}
 
-	function handlePrizeChange(e: React.ChangeEvent<HTMLInputElement>) {
-		const { name, value } = e.target;
-		setNewPrize((prev) => ({
+	function updatePrize(index: number, patch: Partial<PrizeInput>) {
+		setForm((prev) => ({
 			...prev,
-			[name]: name === "price" ? Number(value) : value,
+			prizes: prev.prizes.map((p, i) => (i === index ? { ...p, ...patch } : p)),
 		}));
 	}
 
 	function addPrize() {
-		if (!newPrize.name.trim()) return;
-		setForm((prev) => ({ ...prev, prizes: [...prev.prizes, { ...newPrize }] }));
-		setNewPrize(emptyPrize);
-		setShowPrizeForm(false);
+		setForm((prev) => ({ ...prev, prizes: [...prev.prizes, { ...emptyPrize }] }));
 	}
 
 	function removePrize(index: number) {
 		setForm((prev) => ({
 			...prev,
-			prizes: prev.prizes.filter((_, i) => i !== index),
+			prizes:
+				prev.prizes.length <= 1
+					? prev.prizes
+					: prev.prizes.filter((_, i) => i !== index),
 		}));
 	}
 
+	const dateError =
+		form.start_date && form.end_date && form.end_date <= form.start_date
+			? "Дата окончания должна быть позже даты начала"
+			: null;
+
+	const prizesValid = form.prizes.every((p) => p.name.trim() !== "");
+
+	const canSubmit =
+		form.name.trim() !== "" &&
+		form.org_id !== "" &&
+		form.start_date !== "" &&
+		form.end_date !== "" &&
+		form.max_entries >= 1 &&
+		ticketPrice >= 0 &&
+		!dateError &&
+		prizesValid &&
+		!isLoading;
+
 	async function handleSubmit() {
-		if (isLoading) return;
+		if (!canSubmit) return;
 		setIsLoading(true);
 		setError(null);
 		try {
@@ -257,11 +188,14 @@ export default function PageLotteryCreate() {
 		}
 	}
 
-	// ── render ───────────────────────────────────────────────────
+	const selectedOrgName =
+		organizers.find((o) => o.id === form.org_id)?.name ?? form.org_id;
+	const randomizerName = form.randomizer_type
+		? RANDOMIZER_REGISTRY[form.randomizer_type].name
+		: "—";
 
 	return (
-		<div className="max-w-xl mx-auto px-4 py-8">
-			{/* Header */}
+		<div className="max-w-2xl mx-auto px-4 py-8">
 			<div className="flex items-center gap-4 mb-8">
 				<Button variant="ghost" onClick={() => navigate("/lotteries")}>
 					← Назад
@@ -269,45 +203,11 @@ export default function PageLotteryCreate() {
 				<h1 className="text-2xl font-bold">Создать розыгрыш</h1>
 			</div>
 
-			{/* Step indicator */}
-			<div className="flex items-center mb-8">
-				{STEPS.map((label, i) => {
-					const num = i + 1;
-					const isActive = step === num;
-					const isDone = step > num;
-					return (
-						<React.Fragment key={label}>
-							<div className="flex flex-col items-center gap-1">
-								<div
-									className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-colors ${
-										isDone
-											? "bg-primary border-primary text-primary-foreground"
-											: isActive
-											? "border-primary text-primary"
-											: "border-muted-foreground text-muted-foreground"
-									}`}
-								>
-									{isDone ? "✓" : num}
-								</div>
-								<span className={`text-xs ${isActive ? "text-primary font-medium" : "text-muted-foreground"}`}>
-									{label}
-								</span>
-							</div>
-							{i < STEPS.length - 1 && (
-								<div
-									className={`flex-1 h-0.5 mx-2 mb-4 transition-colors ${
-										step > i + 1 ? "bg-primary" : "bg-muted"
-									}`}
-								/>
-							)}
-						</React.Fragment>
-					);
-				})}
-			</div>
+			<div className="flex flex-col gap-8">
+				{/* Основное */}
+				<section className="flex flex-col gap-5">
+					<h2 className="text-lg font-semibold">Основное</h2>
 
-			{/* ── Step 1 — Основное ─────────────────────────────── */}
-			{step === 1 && (
-				<div className="flex flex-col gap-5">
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="name">Название</Label>
 						<Input
@@ -319,387 +219,278 @@ export default function PageLotteryCreate() {
 						/>
 					</div>
 
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="org_id">Организатор</Label>
-						{editOrg || !form.org_id ? (
+					{organizers.length > 1 && (
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="org_id">Организатор</Label>
 							<select
 								id="org_id"
 								value={form.org_id}
-								onChange={(e) => {
-									setForm((p) => ({ ...p, org_id: e.target.value }));
-									if (e.target.value) setEditOrg(false);
-								}}
+								onChange={(e) => setForm((p) => ({ ...p, org_id: e.target.value }))}
 								className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
 							>
 								<option value="">Выберите организатора</option>
 								{organizers.map((o) => (
-									<option key={o.id} value={o.id}>{o.name}</option>
+									<option key={o.id} value={o.id}>
+										{o.name}
+									</option>
 								))}
 							</select>
-						) : (
-							<div className="flex items-center gap-2">
-								<div className="h-9 flex-1 rounded-md border border-input bg-muted/40 px-3 flex items-center text-sm">
-									{organizers.find((o) => o.id === form.org_id)?.name ?? form.org_id}
-								</div>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() => setEditOrg(true)}
-									disabled={organizers.length <= 1}
-								>
-									Изменить
-								</Button>
-							</div>
-						)}
+						</div>
+					)}
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="flex flex-col gap-1.5">
+							<Label>Дата и время начала</Label>
+							<DateTimeInput
+								id="start_date"
+								value={form.start_date}
+								onChange={(v) => setForm((p) => ({ ...p, start_date: v }))}
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label>Дата и время окончания</Label>
+							<DateTimeInput
+								id="end_date"
+								value={form.end_date}
+								min={form.start_date}
+								onChange={(v) => setForm((p) => ({ ...p, end_date: v }))}
+							/>
+							{dateError && <p className="text-xs text-destructive">{dateError}</p>}
+						</div>
 					</div>
 
-					<div className="flex flex-col gap-1.5">
-						<Label>Дата и время начала</Label>
-						<DateTimeInput
-							id="start_date"
-							value={form.start_date}
-							onChange={(v) => setForm((p) => ({ ...p, start_date: v }))}
-						/>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="max_entries">Макс. участников</Label>
+							<Input
+								id="max_entries"
+								name="max_entries"
+								type="number"
+								min={1}
+								value={form.max_entries}
+								onChange={handleFormChange}
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="ticket_price">Цена билета (₽)</Label>
+							<Input
+								id="ticket_price"
+								type="number"
+								min={0}
+								value={ticketPrice}
+								onChange={(e) => setTicketPrice(Number(e.target.value))}
+							/>
+						</div>
 					</div>
+				</section>
 
-					<div className="flex flex-col gap-1.5">
-						<Label>Дата и время окончания</Label>
-						<DateTimeInput
-							id="end_date"
-							value={form.end_date}
-							min={form.start_date}
-							onChange={(v) => setForm((p) => ({ ...p, end_date: v }))}
-						/>
-						{dateError && (
-							<p className="text-xs text-destructive">{dateError}</p>
-						)}
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="max_entries">Максимум участников</Label>
-						<Input
-							id="max_entries"
-							name="max_entries"
-							type="number"
-							min={1}
-							value={form.max_entries}
-							onChange={handleFormChange}
-						/>
-						{form.max_entries < 1 && (
-							<p className="text-xs text-destructive">Должно быть не менее 1</p>
-						)}
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="ticket_price">Цена билета (₽)</Label>
-						<Input
-							id="ticket_price"
-							type="number"
-							min={0}
-							value={ticketPrice}
-							onChange={(e) => setTicketPrice(Number(e.target.value))}
-						/>
-						{ticketPrice < 0 && (
-							<p className="text-xs text-destructive">Цена не может быть отрицательной</p>
-						)}
-					</div>
-
-					<div className="flex justify-end gap-3 mt-2">
-						<Button type="button" variant="outline" onClick={() => navigate("/lotteries")}>
-							Отмена
-						</Button>
-						<Button type="button" disabled={!step1Valid} onClick={() => setStep(2)}>
-							Далее →
+				{/* Призы */}
+				<section className="flex flex-col gap-4">
+					<div className="flex items-center justify-between">
+						<h2 className="text-lg font-semibold">Призы</h2>
+						<Button type="button" variant="outline" size="sm" onClick={addPrize}>
+							+ Добавить ещё
 						</Button>
 					</div>
-				</div>
-			)}
 
-			{/* ── Step 2 — Призы ───────────────────────────────── */}
-			{step === 2 && (
-				<div className="flex flex-col gap-5">
-					<p className="text-sm text-muted-foreground">
-						Добавьте призы розыгрыша. Этот шаг необязателен.
-					</p>
+					<div className="flex flex-col gap-3">
+						{form.prizes.map((prize, i) => (
+							<Card key={i}>
+								<CardContent className="py-4 flex flex-col gap-3">
+									<div className="flex items-center justify-between">
+										<p className="text-xs uppercase tracking-wide text-muted-foreground">
+											Приз {i + 1}
+										</p>
+										{form.prizes.length > 1 && (
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												onClick={() => removePrize(i)}
+											>
+												<Trash2 className="w-4 h-4" />
+											</Button>
+										)}
+									</div>
 
-					{/* Prize list */}
-					{form.prizes.length > 0 && (
+									<ImageUpload
+										value={prize.img_path ?? ""}
+										onChange={(v) => updatePrize(i, { img_path: v })}
+										onClear={() => updatePrize(i, { img_path: "" })}
+										height="sm"
+									/>
+
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={`prize-name-${i}`}>Название</Label>
+										<Input
+											id={`prize-name-${i}`}
+											placeholder="Например: AirPods Pro"
+											value={prize.name}
+											onChange={(e) => updatePrize(i, { name: e.target.value })}
+										/>
+									</div>
+
+									<div className="grid grid-cols-1 md:grid-cols-[1fr_140px] gap-3">
+										<div className="flex flex-col gap-1.5">
+											<Label htmlFor={`prize-desc-${i}`}>Описание</Label>
+											<Input
+												id={`prize-desc-${i}`}
+												placeholder="Краткое описание"
+												value={prize.description}
+												onChange={(e) => updatePrize(i, { description: e.target.value })}
+											/>
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<Label htmlFor={`prize-price-${i}`}>Цена (₽)</Label>
+											<Input
+												id={`prize-price-${i}`}
+												type="number"
+												min={0}
+												value={prize.price}
+												onChange={(e) =>
+													updatePrize(i, { price: Number(e.target.value) })
+												}
+											/>
+										</div>
+									</div>
+								</CardContent>
+							</Card>
+						))}
+					</div>
+					{!prizesValid && (
+						<p className="text-xs text-destructive">
+							У каждого приза должно быть название
+						</p>
+					)}
+				</section>
+
+				{/* Доп. настройки */}
+				<details className="group rounded-xl border border-border">
+					<summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between text-sm font-medium select-none">
+						<span>Дополнительные настройки</span>
+						<ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
+					</summary>
+					<div className="px-4 pb-4 pt-1 flex flex-col gap-4">
 						<div className="flex flex-col gap-2">
-							{form.prizes.map((prize, i) => (
-								<Card key={i}>
-									<CardContent className="py-3 flex items-center gap-3">
+							<Label>Рандомайзер</Label>
+							<p className="text-xs text-muted-foreground">
+								Внешний сервис, который определит победителей. По умолчанию — random.org.
+							</p>
+							<div className="flex flex-col gap-2">
+								{Object.values(RANDOMIZER_REGISTRY).map((meta) => {
+									const isSelected = form.randomizer_type === meta.id;
+									const disabled = !meta.supported;
+									return (
+										<button
+											key={meta.id}
+											type="button"
+											disabled={disabled}
+											onClick={() =>
+												setForm((p) => ({ ...p, randomizer_type: meta.id }))
+											}
+											className={`text-left rounded-lg border-2 px-3 py-2 transition-colors ${
+												isSelected
+													? "border-primary bg-primary/5"
+													: "border-border hover:border-primary/60"
+											} ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+										>
+											<div className="flex items-center justify-between gap-2">
+												<span className="font-medium text-sm">{meta.name}</span>
+												{!meta.supported && (
+													<span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+														Скоро
+													</span>
+												)}
+											</div>
+											<p className="text-xs text-muted-foreground mt-0.5">
+												{meta.description}
+											</p>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					</div>
+				</details>
+
+				{/* Summary */}
+				<Card>
+					<CardContent className="py-4 flex flex-col gap-3 text-sm">
+						<p className="text-xs uppercase tracking-wide text-muted-foreground">
+							Перед публикацией
+						</p>
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<p className="text-xs text-muted-foreground">Название</p>
+								<p className="font-medium">{form.name || "—"}</p>
+							</div>
+							<div>
+								<p className="text-xs text-muted-foreground">Организатор</p>
+								<p className="font-medium">{selectedOrgName || "—"}</p>
+							</div>
+							<div>
+								<p className="text-xs text-muted-foreground">Старт</p>
+								<p>{formatPreview(form.start_date)}</p>
+							</div>
+							<div>
+								<p className="text-xs text-muted-foreground">Финиш</p>
+								<p>{formatPreview(form.end_date)}</p>
+							</div>
+							<div>
+								<p className="text-xs text-muted-foreground">Билетов</p>
+								<p>
+									{form.max_entries} × {ticketPrice} ₽
+								</p>
+							</div>
+							<div>
+								<p className="text-xs text-muted-foreground">Рандомайзер</p>
+								<p>{randomizerName}</p>
+							</div>
+						</div>
+						<Separator />
+						<div>
+							<p className="text-xs text-muted-foreground mb-2">
+								Призы ({form.prizes.length})
+							</p>
+							<div className="flex flex-col gap-1.5">
+								{form.prizes.map((prize, i) => (
+									<div key={i} className="flex items-center gap-2">
 										{prize.img_path ? (
 											<img
 												src={prize.img_path}
 												alt={prize.name}
-												className="w-10 h-10 rounded-lg object-cover shrink-0"
+												className="w-6 h-6 rounded object-cover shrink-0"
 											/>
 										) : (
-											<div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-												<ImageIcon className="w-5 h-5 text-muted-foreground" />
+											<div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
+												<ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
 											</div>
 										)}
-										<div className="flex-1 min-w-0">
-											<p className="font-medium truncate">{prize.name}</p>
-											<p className="text-sm text-muted-foreground">{prize.price} ₽</p>
-										</div>
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={() => removePrize(i)}
-										>
-											Удалить
-										</Button>
-									</CardContent>
-								</Card>
-							))}
+										<span className="flex-1 truncate">{prize.name || "Без названия"}</span>
+										<span className="text-muted-foreground">{prize.price} ₽</span>
+									</div>
+								))}
+							</div>
 						</div>
-					)}
+					</CardContent>
+				</Card>
 
-					{/* Inline add-prize form */}
-					{showPrizeForm ? (
-						<Card>
-							<CardContent className="py-4 flex flex-col gap-4">
-								<div className="flex flex-col gap-1.5">
-									<Label>Изображение</Label>
-									<ImageUpload
-										value={newPrize.img_path ?? ""}
-										onChange={(v) => setNewPrize((p) => ({ ...p, img_path: v }))}
-										onClear={() => setNewPrize((p) => ({ ...p, img_path: "" }))}
-									/>
-								</div>
+				{error && <p className="text-sm text-destructive">{error}</p>}
 
-								<div className="flex flex-col gap-1.5">
-									<Label>Название приза</Label>
-									<Input
-										name="name"
-										placeholder="Например: AirPods Pro"
-										value={newPrize.name}
-										onChange={handlePrizeChange}
-									/>
-								</div>
-
-								<div className="flex flex-col gap-1.5">
-									<Label>Описание</Label>
-									<Input
-										name="description"
-										placeholder="Краткое описание приза"
-										value={newPrize.description}
-										onChange={handlePrizeChange}
-									/>
-								</div>
-
-								<div className="flex flex-col gap-1.5">
-									<Label>Цена (₽)</Label>
-									<Input
-										name="price"
-										type="number"
-										min={0}
-										value={newPrize.price}
-										onChange={handlePrizeChange}
-									/>
-								</div>
-
-								<div className="flex gap-2 justify-end">
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => {
-											setShowPrizeForm(false);
-											setNewPrize(emptyPrize);
-										}}
-									>
-										Отмена
-									</Button>
-									<Button
-										type="button"
-										disabled={!newPrize.name.trim()}
-										onClick={addPrize}
-									>
-										Добавить приз
-									</Button>
-								</div>
-							</CardContent>
-						</Card>
-					) : (
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => setShowPrizeForm(true)}
-						>
-							+ Добавить приз
-						</Button>
-					)}
-
-					<div className="flex justify-between mt-2">
-						<Button type="button" variant="outline" onClick={() => setStep(1)}>
-							← Назад
-						</Button>
-						<Button type="button" onClick={() => setStep(3)}>
-							Далее →
-						</Button>
-					</div>
+				<div className="flex justify-end gap-3">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => navigate("/lotteries")}
+						disabled={isLoading}
+					>
+						Отмена
+					</Button>
+					<Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
+						{isLoading ? "Создаём…" : "Создать"}
+					</Button>
 				</div>
-			)}
-
-			{/* ── Step 3 — Рандомайзер ─────────────────────────── */}
-			{step === 3 && (
-				<div className="flex flex-col gap-5">
-					<p className="text-sm text-muted-foreground">
-						Выберите внешний сервис, который определит победителей. Это гарантирует прозрачность розыгрыша — после окончания вы запустите розыгрыш, а результат будет проверяем.
-					</p>
-
-					<div className="flex flex-col gap-3">
-						{Object.values(RANDOMIZER_REGISTRY).map((meta) => {
-							const isSelected = form.randomizer_type === meta.id;
-							const disabled = !meta.supported;
-							return (
-								<button
-									key={meta.id}
-									type="button"
-									disabled={disabled}
-									onClick={() => setForm((p) => ({ ...p, randomizer_type: meta.id }))}
-									className={`text-left rounded-xl border-2 p-4 transition-colors ${
-										isSelected
-											? "border-primary bg-primary/5"
-											: "border-border hover:border-primary/60"
-									} ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-								>
-									<div className="flex items-center justify-between gap-2 mb-1">
-										<span className="font-medium">{meta.name}</span>
-										{!meta.supported && (
-											<span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Скоро</span>
-										)}
-									</div>
-									<p className="text-sm text-muted-foreground">{meta.description}</p>
-									{/* <a
-										href={meta.docsUrl}
-										target="_blank"
-										rel="noreferrer"
-										onClick={(e) => e.stopPropagation()}
-										className="inline-block mt-2 text-xs text-primary hover:underline"
-									>
-										Документация ↗
-									</a> */}
-								</button>
-							);
-						})}
-					</div>
-
-					<div className="flex justify-between mt-2">
-						<Button type="button" variant="outline" onClick={() => setStep(2)}>
-							← Назад
-						</Button>
-						<Button type="button" onClick={() => setStep(4)}>
-							Далее →
-						</Button>
-					</div>
-				</div>
-			)}
-
-			{/* ── Step 4 — Подтверждение ────────────────────────── */}
-			{step === 4 && (
-				<div className="flex flex-col gap-5">
-					<Card>
-						<CardContent className="py-4 flex flex-col gap-3">
-							<div>
-								<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Название</p>
-								<p className="font-medium">{form.name}</p>
-							</div>
-							<Separator />
-							<div>
-								<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Организатор</p>
-								<p className="font-medium">
-									{organizers.find((o) => o.id === form.org_id)?.name ?? form.org_id}
-								</p>
-							</div>
-							<Separator />
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Дата начала</p>
-									<p className="text-sm">{formatPreview(form.start_date)}</p>
-								</div>
-								<div>
-									<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Дата окончания</p>
-									<p className="text-sm">{formatPreview(form.end_date)}</p>
-								</div>
-							</div>
-							<Separator />
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Макс. участников</p>
-									<p className="text-sm">{form.max_entries}</p>
-								</div>
-								<div>
-									<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Цена билета</p>
-									<p className="text-sm">{ticketPrice} ₽</p>
-								</div>
-							</div>
-							<Separator />
-							<div>
-								<p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Рандомайзер</p>
-								<p className="text-sm">
-									{form.randomizer_type
-										? RANDOMIZER_REGISTRY[form.randomizer_type].name
-										: "—"}
-								</p>
-							</div>
-
-							{form.prizes.length > 0 && (
-								<>
-									<Separator />
-									<div>
-										<p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-											Призы ({form.prizes.length})
-										</p>
-										<div className="flex flex-col gap-2">
-											{form.prizes.map((prize, i) => (
-												<div key={i} className="flex items-center gap-3">
-													{prize.img_path ? (
-														<img
-															src={prize.img_path}
-															alt={prize.name}
-															className="w-8 h-8 rounded object-cover shrink-0"
-														/>
-													) : (
-														<div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0">
-															<ImageIcon className="w-4 h-4 text-muted-foreground" />
-														</div>
-													)}
-													<span className="flex-1 text-sm truncate">{prize.name}</span>
-													<span className="text-sm text-muted-foreground">{prize.price} ₽</span>
-												</div>
-											))}
-										</div>
-									</div>
-								</>
-							)}
-						</CardContent>
-					</Card>
-
-					{error && <p className="text-sm text-destructive">{error}</p>}
-
-					<div className="flex justify-between mt-2">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => setStep(3)}
-							disabled={isLoading}
-						>
-							← Назад
-						</Button>
-						<Button
-							type="button"
-							onClick={handleSubmit}
-							disabled={isLoading}
-						>
-							{isLoading ? "Создаём..." : "Создать"}
-						</Button>
-					</div>
-				</div>
-			)}
+			</div>
 		</div>
 	);
 }

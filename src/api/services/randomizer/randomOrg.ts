@@ -1,10 +1,15 @@
 import axios from "axios";
-import type{ JsonRpcResponse, RandomOrgDrawResult } from "@/api/types";
+import type {
+	RandomOrgDrawResult,
+	RandomOrgUserData,
+	SignedJsonRpcResponse,
+} from "@/api/types";
 import { RANDOMIZER_SERVICE_RANOM_ORG } from "@/../api.config";
 
 export async function drawWithRandomOrg(
 	prizesCount: number,
 	ticketsCount: number,
+	userData: RandomOrgUserData,
 ): Promise<RandomOrgDrawResult> {
 	const apiKey = import.meta.env.VITE_RANDOM_ORG_API_KEY;
 	if (!apiKey) {
@@ -17,21 +22,26 @@ export async function drawWithRandomOrg(
 
 	const body = {
 		jsonrpc: "2.0" as const,
-		method: "generateIntegers",
+		method: "generateSignedIntegers",
 		params: {
 			apiKey,
 			n: prizesCount,
 			min: 1,
 			max: ticketsCount,
 			replacement: false,
+			userData,
 		},
 		id: Date.now(),
 	};
 
-	const res = await axios.post<JsonRpcResponse>(RANDOMIZER_SERVICE_RANOM_ORG, body, {
-		headers: { "Content-Type": "application/json" },
-		timeout: 15000,
-	});
+	const res = await axios.post<SignedJsonRpcResponse>(
+		RANDOMIZER_SERVICE_RANOM_ORG,
+		body,
+		{
+			headers: { "Content-Type": "application/json" },
+			timeout: 15000,
+		},
+	);
 
 	if (res.data.error) {
 		throw new Error(`RANDOM.ORG: ${res.data.error.message}`);
@@ -42,6 +52,8 @@ export async function drawWithRandomOrg(
 
 	return {
 		winningSerials: res.data.result.random.data,
+		signature: res.data.result.signature,
+		signedRandom: res.data.result.random,
 		rawResponse: res.data,
 	};
 }
