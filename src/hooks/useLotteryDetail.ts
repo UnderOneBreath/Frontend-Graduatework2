@@ -228,7 +228,7 @@ export function useLotteryDetail(id: string | undefined): LotteryDetailState {
 		};
 	}, [id, tick]);
 
-	const paidCount = tickets.filter((t) => !!t.user_id).length;
+	const paidCount = tickets.filter((t) => t.status === TicketStatus.Paid).length;
 
 	return {
 		lottery,

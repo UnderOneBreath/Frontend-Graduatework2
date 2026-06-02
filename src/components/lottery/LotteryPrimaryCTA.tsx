@@ -2,14 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LotteryResponse, TicketResponse } from "@/api/types/lottery.types";
-import { LotteryStatus } from "@/api/types/lottery.types";
+import { LotteryStatus, TicketStatus } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
 import { LotteryBookingForm } from "@/components/lottery/LotteryBookingForm";
 
 interface LotteryPrimaryCTAProps {
 	lottery: LotteryResponse;
 	tickets: TicketResponse[];
-	paidCount: number;
 	isAuthenticated: boolean;
 	userId: string | null;
 	isOwner: boolean;
@@ -25,7 +24,6 @@ function scrollToSection(id: string) {
 export function LotteryPrimaryCTA({
 	lottery,
 	tickets,
-	paidCount,
 	isAuthenticated,
 	userId,
 	isOwner,
@@ -35,7 +33,7 @@ export function LotteryPrimaryCTA({
 	const navigate = useNavigate();
 
 	const isActive = lottery.status === LotteryStatus.Active;
-	const isFull = paidCount >= lottery.max_entries;
+	const isFull = !tickets.some((t) => t.status === TicketStatus.Vacant);
 
 	if (!isActive) {
 		const label = isOwner ? "Открыть отчёт" : "Смотреть победителей";

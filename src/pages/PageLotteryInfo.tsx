@@ -205,7 +205,6 @@ export default function PageLotteryInfo() {
 					<LotteryPrimaryCTA
 						lottery={lottery}
 						tickets={tickets}
-						paidCount={paidCount}
 						isAuthenticated={authed}
 						userId={userId}
 						isOwner={isOwner}
