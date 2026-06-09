@@ -3,7 +3,10 @@ name: Deploy Frontend to Staging
 on:
   push:
     branches:
-      - develop # Скрипт сработает при пуше в main
+      - develop
+  pull_request:
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -19,6 +22,9 @@ jobs:
           # my version nodejs
           node-node: '24.12.0'
           cache: 'npm' # on cache. anyway we need it, altroght amount memory is limited.
+      - name: Create .env Base64 secret
+        run: |
+          echo "${{ secrets.ENV_STAGING_BASE64 }}" | base64 --decode > .env
       # build in github
       - name: Install and Build
         run: |

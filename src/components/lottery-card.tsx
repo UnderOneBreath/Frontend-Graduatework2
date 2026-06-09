@@ -25,7 +25,6 @@ export function LotteryCard({
 			className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-md"
 			onClick={() => onDetails?.(lottery.id)}
 		>
-			{/* Картинка */}
 			<div className="h-44 bg-gray-100 relative">
 				{coverImage ? (
 					<img
@@ -51,7 +50,6 @@ export function LotteryCard({
 				)}
 			</div>
 
-			{/* Контент */}
 			<div className="p-4">
 				<p className="font-semibold text-base">{lottery.name}</p>
 
