@@ -37,6 +37,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.SERVER_HOST }}
           REMOTE_USER: ${{ secrets.SERVER_USER }}
+          PORT: ${{ secrets.SERVER_PORT }}
           TARGET: /srv/production/dist/  # Где будет лежать на сервере
           SOURCE: dist/                  # Копируется dist из GitHub
           ARGS: "-rlgoDzvO --delete"     # Флаг --delete очистит старый код на сервере перед записью нового
