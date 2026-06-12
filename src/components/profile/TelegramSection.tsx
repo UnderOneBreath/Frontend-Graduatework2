@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { genTelegramCode, getTelegramId } from "@/api/services/user";
 import ProfileSection from "./ProfileSection";
@@ -100,13 +101,17 @@ export default function TelegramSection({ userId }: TelegramSectionProps) {
 			}
 		>
 			{code ? (
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-3">
 					<p className="text-sm text-foreground">
-						Откройте бота и отправьте команду:
+						Отсканируйте QR-код, чтобы открыть бота:
 					</p>
-					<code className="text-sm font-mono bg-muted px-3 py-2 rounded-md w-fit">
-						/start {code}
-					</code>
+					<div className="p-3 bg-white rounded-md w-fit">
+						<QRCodeSVG
+							value={`https://t.me/GiveawayCourseWork_bot?start=${code}`}
+							size={160}
+							level="M"
+						/>
+					</div>
 					<p className="text-xs text-muted-foreground">
 						Ожидаем подтверждение от бота...
 					</p>
