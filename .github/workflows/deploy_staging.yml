@@ -52,5 +52,8 @@ jobs:
           TARGET: /srv/staging/
           ARGS: "-rlgoDzv"
           SCRIPT_AFTER: |
-            sudo nginx -t
-            sudo systemctl reload nginx
+            sudo certbot --nginx \
+              -d test.min-monitoring.ru \
+              --non-interactive --agree-tos \
+              --register-unsafely-without-email --redirect || true
+            sudo nginx -t && sudo systemctl reload nginx

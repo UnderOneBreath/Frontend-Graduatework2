@@ -52,5 +52,12 @@ jobs:
           TARGET: /srv/production/
           ARGS: "-rlgoDzv"
           SCRIPT_AFTER: |
-            sudo nginx -t
-            sudo systemctl reload nginx
+            sudo certbot --nginx \
+              -d min-monitoring.ru -d www.min-monitoring.ru \
+              -d api.min-monitoring.ru \
+              -d lottery.min-monitoring.ru \
+              -d organizer.min-monitoring.ru \
+              -d notifications.min-monitoring.ru \
+              --non-interactive --agree-tos \
+              --register-unsafely-without-email --redirect || true
+            sudo nginx -t && sudo systemctl reload nginx
