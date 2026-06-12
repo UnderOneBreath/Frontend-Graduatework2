@@ -4,12 +4,6 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/* ─────────────────────────────────────────────────────────────
-   «ТИРАЖ» — одноэкранная главная.
-   Редакционно-брутальная типографика, один кислотный акцент,
-   моноширинные «крутящиеся» номера билета. Тема-зависимая.
-   ───────────────────────────────────────────────────────────── */
-
 const SLOTS = 5;
 
 const PRIZES = [
@@ -36,7 +30,6 @@ const prefersReducedMotion = () =>
 const randomTarget = () =>
   Array.from({ length: SLOTS }, () => Math.floor(Math.random() * 10));
 
-/** Барабан розыгрыша: цифры крутятся, фиксируются слева направо, держатся и стартуют заново. */
 function TicketDraw() {
   const [digits, setDigits] = useState<number[]>(() => randomTarget());
   const [locked, setLocked] = useState(0);
@@ -50,9 +43,9 @@ function TicketDraw() {
       return;
     }
 
-    const SPIN = 13; // тиков на «прокрутку»
-    const GAP = 4; // тиков между фиксацией каждой цифры
-    const HOLD = 34; // тиков удержания результата
+    const SPIN = 13;
+    const GAP = 4;
+    const HOLD = 34;
     const CYCLE = SPIN + SLOTS * GAP + HOLD;
 
     const id = window.setInterval(() => {
@@ -134,7 +127,6 @@ export default function PageMain() {
 
   return (
     <main className="relative isolate min-h-[calc(100svh-3.5rem)] bg-background text-foreground">
-      {/* Декор: колоночные хайрлайны + гигантский фоновый номер */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -145,18 +137,15 @@ export default function PageMain() {
         </div>
       </div>
 
-      {/* Вертикальный лейбл-доказательство на правом краю */}
       <div
         aria-hidden
         className="pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 rotate-180 font-mono text-[10px] uppercase tracking-[0.4em] text-muted-foreground/70 [writing-mode:vertical-rl] lg:block"
       >
-        random.org · подписано · проверяемо
+        random.org · проверяемо
       </div>
 
-      {/* Центрированный контент */}
       <div className="relative z-10 mx-auto flex min-h-[calc(100svh-3.5rem)] max-w-6xl flex-col justify-center px-6 pt-10 pb-24">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
-          {/* Левая колонка: типографика */}
           <div className="lg:col-span-7">
             <div className="mb-6 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
               <span className="inline-block size-2 rounded-full bg-acid motion-safe:animate-[acid-pulse_1.4s_ease-in-out_infinite]" />
@@ -197,7 +186,6 @@ export default function PageMain() {
               </Button>
             </div>
 
-            {/* Хайрлайн-лента статистики */}
             <dl className="mt-12 grid max-w-xl grid-cols-3 border-y border-border font-mono">
               {STATS.map(([value, label], i) => (
                 <div
@@ -218,10 +206,8 @@ export default function PageMain() {
             </dl>
           </div>
 
-          {/* Правая колонка: «билет» с барабаном */}
           <div className="lg:col-span-5 lg:justify-self-end">
             <div className="relative w-full max-w-sm">
-              {/* Брутальная кислотная «тень» */}
               <div
                 aria-hidden
                 className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-xl bg-acid"
@@ -261,7 +247,6 @@ export default function PageMain() {
         </div>
       </div>
 
-      {/* Бегущая строка призов по нижнему краю */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden border-t border-border bg-background/70 backdrop-blur-sm"
