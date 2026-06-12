@@ -2,6 +2,7 @@ import type { RandomizerProvider, RandomizerResult } from "@/api/types/randomize
 
 // Enums
 export const LotteryStatus = {
+	Inactive: "inactive",
 	Active: "active",
 	Completed: "completed",
 } as const;

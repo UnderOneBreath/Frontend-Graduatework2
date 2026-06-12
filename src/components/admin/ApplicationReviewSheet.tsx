@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { approveApplication, rejectApplication } from "@/api/services/moderation";
 import type { OrganizerApplication } from "@/api/types/moderation.types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -22,17 +21,15 @@ interface ApplicationReviewSheetProps {
 }
 
 function statusLabel(status: OrganizerApplication["status"]): string {
-	if (status === "pending") return "На модерации";
-	if (status === "accepted") return "Одобрена";
-	return "Отклонена";
+	if (status === "pending") return "Не рассмотрено";
+	if (status === "accepted") return "Одобрено";
+	return "Отклонено";
 }
 
-function statusVariant(
-	status: OrganizerApplication["status"],
-): "default" | "secondary" | "outline" | "destructive" {
-	if (status === "accepted") return "default";
-	if (status === "rejected") return "destructive";
-	return "outline";
+function statusClass(status: OrganizerApplication["status"]): string {
+	if (status === "accepted") return "text-emerald-600 dark:text-emerald-400";
+	if (status === "rejected") return "text-destructive";
+	return "text-muted-foreground";
 }
 
 export default function ApplicationReviewSheet({
@@ -99,9 +96,9 @@ export default function ApplicationReviewSheet({
 				<SheetHeader>
 					<div className="flex items-center justify-between gap-2 pr-8">
 						<SheetTitle>Заявка на регистрацию</SheetTitle>
-						<Badge variant={statusVariant(application.status)}>
+						<span className={`text-sm font-medium ${statusClass(application.status)}`}>
 							{statusLabel(application.status)}
-						</Badge>
+						</span>
 					</div>
 					<SheetDescription>
 						Подана {new Date(application.created_at).toLocaleString("ru-RU")}

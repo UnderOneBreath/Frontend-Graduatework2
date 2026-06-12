@@ -3,7 +3,7 @@ export const NotificationType = {
 	EndOfLottery: "endOfLottery",
 	LotteryStartsSoon: "lotteryStartsSoon",
 	TicketBuyApproval: "ticketBuyApproval",
-	OrgRegReqApproval: "orgRegReqAprroval",
+	OrgRegReqApproval: "orgRegReqApproval",
 	TicketBuyRejection: "ticketBuyRejection",
 	OrgRegReqRejection: "orgRegReqRejection",
 	AccountBan: "accountBan",

@@ -1,9 +1,12 @@
-import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import type { ApplicationCreateRequest } from "@/api/types/moderation.types";
 import { submitApplication } from "@/api/services/moderation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import LogoUpload from "@/components/organizer/LogoUpload";
 
 interface ApplyCompanyFormProps {
 	onSubmitted: () => void;
@@ -29,96 +32,28 @@ const empty: FormState = {
 	logo: "",
 };
 
-function LogoUpload({
-	value,
-	onChange,
-	onClear,
-}: {
-	value: string;
-	onChange: (base64: string) => void;
-	onClear: () => void;
-}) {
-	const inputRef = useRef<HTMLInputElement>(null);
-	const [dragOver, setDragOver] = useState(false);
-
-	function processFile(file: File) {
-		if (!file.type.startsWith("image/")) return;
-		const reader = new FileReader();
-		reader.onload = (e) => onChange(e.target?.result as string);
-		reader.readAsDataURL(file);
-	}
-
-	function handleDrop(e: DragEvent) {
-		e.preventDefault();
-		setDragOver(false);
-		const file = e.dataTransfer.files[0];
-		if (file) processFile(file);
-	}
-
-	if (value) {
-		return (
-			<div className="relative h-32 w-32 overflow-hidden border border-border bg-muted rounded-md">
-				<img src={value} alt="Логотип" className="h-full w-full object-cover" />
-				<button
-					type="button"
-					onClick={onClear}
-					className="absolute top-1 right-1 px-2 py-0.5 text-xs bg-background border border-border rounded-md"
-				>
-					Удалить
-				</button>
-			</div>
-		);
-	}
-
-	return (
-		<div
-			onClick={() => inputRef.current?.click()}
-			onDragOver={(e) => {
-				e.preventDefault();
-				setDragOver(true);
-			}}
-			onDragLeave={() => setDragOver(false)}
-			onDrop={handleDrop}
-			className={`h-32 w-32 cursor-pointer border border-dashed flex items-center justify-center text-xs text-muted-foreground rounded-md ${
-				dragOver ? "border-foreground bg-muted" : "border-border hover:bg-muted/50"
-			}`}
-		>
-			<input
-				ref={inputRef}
-				type="file"
-				accept="image/*"
-				className="hidden"
-				onChange={(e) => {
-					const f = e.target.files?.[0];
-					if (f) processFile(f);
-				}}
-			/>
-			Загрузить логотип
-		</div>
-	);
-}
-
 export default function ApplyCompanyForm({ onSubmitted }: ApplyCompanyFormProps) {
 	const [form, setForm] = useState<FormState>(empty);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	const isValid =
+		form.name.trim().length > 0 &&
+		/^\d{10,12}$/.test(form.inn) &&
+		/^\d{13,15}$/.test(form.ogrn) &&
+		form.phone.trim().length > 0 &&
+		form.address.trim().length > 0 &&
+		/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 
 	function handleChange(e: ChangeEvent<HTMLInputElement>) {
 		const { name, value } = e.target;
 		setForm((prev) => ({ ...prev, [name]: value }));
 	}
 
-	const valid =
-		form.name.trim() !== "" &&
-		/^\d{10,12}$/.test(form.inn) &&
-		/^\d{13,15}$/.test(form.ogrn) &&
-		form.phone.trim() !== "" &&
-		form.address.trim() !== "" &&
-		/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
-
 	async function handleSubmit(e: { preventDefault: () => void }) {
 		e.preventDefault();
-		if (!valid || loading) return;
+		if (!isValid || loading) return;
+
 		const payload: ApplicationCreateRequest = {
 			name: form.name.trim(),
 			inn: Number(form.inn),
@@ -126,8 +61,10 @@ export default function ApplyCompanyForm({ onSubmitted }: ApplyCompanyFormProps)
 			phone: form.phone.trim(),
 			address: form.address.trim(),
 			email: form.email.trim(),
-			...(form.logo ? { logo: form.logo } : {}),
+			// backend requires a UUID string for logo; use uploaded value or generate a placeholder
+			logo: form.logo || crypto.randomUUID(),
 		};
+
 		setLoading(true);
 		setError(null);
 		try {
@@ -141,96 +78,168 @@ export default function ApplyCompanyForm({ onSubmitted }: ApplyCompanyFormProps)
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="flex flex-col gap-6">
-			<div className="flex flex-col gap-2">
-				<Label htmlFor="logo">Логотип</Label>
-				<LogoUpload
-					value={form.logo}
-					onChange={(v) => setForm((p) => ({ ...p, logo: v }))}
-					onClear={() => setForm((p) => ({ ...p, logo: "" }))}
-				/>
-			</div>
-
-			<div className="flex flex-col gap-2">
-				<Label htmlFor="name">Полное наименование</Label>
-				<Input
-					id="name"
-					name="name"
-					value={form.name}
-					onChange={handleChange}
-					placeholder="ООО «Пример»"
-				/>
-			</div>
-
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div className="flex flex-col gap-2">
-					<Label htmlFor="inn">ИНН</Label>
-					<Input
-						id="inn"
-						name="inn"
-						inputMode="numeric"
-						value={form.inn}
-						onChange={handleChange}
-						placeholder="10–12 цифр"
-						className="font-mono tracking-tight"
+		<form onSubmit={handleSubmit} className="space-y-6">
+			{/* Логотип */}
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Логотип компании</CardTitle>
+					<CardDescription>
+						Опциональное поле. Логотип помогает пользователям быстро узнавать вашу компанию
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<LogoUpload
+						value={form.logo}
+						onChange={(v) => setForm((p) => ({ ...p, logo: v }))}
+						onClear={() => setForm((p) => ({ ...p, logo: "" }))}
 					/>
-				</div>
-				<div className="flex flex-col gap-2">
-					<Label htmlFor="ogrn">ОГРН</Label>
-					<Input
-						id="ogrn"
-						name="ogrn"
-						inputMode="numeric"
-						value={form.ogrn}
-						onChange={handleChange}
-						placeholder="13–15 цифр"
-						className="font-mono tracking-tight"
-					/>
-				</div>
-			</div>
+				</CardContent>
+			</Card>
 
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div className="flex flex-col gap-2">
-					<Label htmlFor="phone">Телефон</Label>
-					<Input
-						id="phone"
-						name="phone"
-						value={form.phone}
-						onChange={handleChange}
-						placeholder="+7 ..."
-					/>
+			{/* Основная информация */}
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Основная информация</CardTitle>
+					<CardDescription>
+						Данные будут указаны как название организатора в системе
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="space-y-2">
+						<Label htmlFor="name">Полное наименование компании *</Label>
+						<Input
+							id="name"
+							name="name"
+							value={form.name}
+							onChange={handleChange}
+							placeholder="ООО «Компания»"
+							disabled={loading}
+						/>
+						<p className="text-xs text-muted-foreground">
+							Как указано в учредительных документах
+						</p>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="space-y-2">
+							<Label htmlFor="inn">ИНН *</Label>
+							<Input
+								id="inn"
+								name="inn"
+								value={form.inn}
+								onChange={handleChange}
+								placeholder="0000000000"
+								inputMode="numeric"
+								disabled={loading}
+							/>
+							<p className="text-xs text-muted-foreground">
+								10–12 цифр
+							</p>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="ogrn">ОГРН *</Label>
+							<Input
+								id="ogrn"
+								name="ogrn"
+								value={form.ogrn}
+								onChange={handleChange}
+								placeholder="0000000000000"
+								inputMode="numeric"
+								disabled={loading}
+							/>
+							<p className="text-xs text-muted-foreground">
+								13–15 цифр
+							</p>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Контактная информация */}
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Контактная информация</CardTitle>
+					<CardDescription>
+						Модератор будет связываться с вами по этим данным
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="space-y-2">
+						<Label htmlFor="email">Email *</Label>
+						<Input
+							id="email"
+							name="email"
+							type="email"
+							value={form.email}
+							onChange={handleChange}
+							placeholder="info@company.com"
+							disabled={loading}
+						/>
+						<p className="text-xs text-muted-foreground">
+							На этот адрес придет подтверждение заявки
+						</p>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="phone">Телефон *</Label>
+						<Input
+							id="phone"
+							name="phone"
+							value={form.phone}
+							onChange={handleChange}
+							placeholder="+7 (999) 123-45-67"
+							disabled={loading}
+						/>
+						<p className="text-xs text-muted-foreground">
+							Для срочных уведомлений
+						</p>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="address">Адрес *</Label>
+						<Input
+							id="address"
+							name="address"
+							value={form.address}
+							onChange={handleChange}
+							placeholder="г. Москва, ул. Примерная, д. 1"
+							disabled={loading}
+						/>
+						<p className="text-xs text-muted-foreground">
+							Юридический адрес компании
+						</p>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Ошибка */}
+			{error && (
+				<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex gap-3">
+					<AlertCircle className="size-5 text-destructive shrink-0 mt-0.5" />
+					<p className="text-sm text-destructive">{error}</p>
 				</div>
-				<div className="flex flex-col gap-2">
-					<Label htmlFor="email">Email</Label>
-					<Input
-						id="email"
-						name="email"
-						type="email"
-						value={form.email}
-						onChange={handleChange}
-						placeholder="company@example.com"
-					/>
-				</div>
-			</div>
+			)}
 
-			<div className="flex flex-col gap-2">
-				<Label htmlFor="address">Адрес</Label>
-				<Input
-					id="address"
-					name="address"
-					value={form.address}
-					onChange={handleChange}
-					placeholder="Город, улица, дом"
-				/>
-			</div>
-
-			{error && <p className="text-sm text-foreground border border-border px-3 py-2 rounded-md">{error}</p>}
-
-			<div className="flex gap-3 justify-end">
-				<Button type="submit" disabled={!valid || loading}>
-					{loading ? "Отправка..." : "Отправить на модерацию"}
+			{/* Кнопка отправки */}
+			<div className="flex justify-end pt-4">
+				<Button
+					type="submit"
+					disabled={!isValid || loading}
+					size="lg"
+				>
+					{loading ? "Отправка заявки..." : "Отправить заявку"}
 				</Button>
 			</div>
+
+			{/* Дополнительная информация */}
+			<Card className="bg-muted/30 border-0">
+				<CardContent className="pt-6">
+					<p className="text-sm text-muted-foreground">
+						<span className="font-medium text-foreground">Время рассмотрения:</span> Обычно заявка рассматривается в течение 1-2 рабочих дней.
+						Вам будет отправлено письмо на указанный email с результатом.
+					</p>
+				</CardContent>
+			</Card>
 		</form>
 	);
 }

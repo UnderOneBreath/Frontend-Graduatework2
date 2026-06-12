@@ -1,8 +1,15 @@
 import { useMemo, useState } from "react";
 import type { OrganizerApplication } from "@/api/types/moderation.types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useModerationQueue } from "@/hooks/useModerationQueue";
 import ApplicationReviewSheet from "@/components/admin/ApplicationReviewSheet";
@@ -15,12 +22,16 @@ const TAB_LABEL: Record<TabKey, string> = {
 	rejected: "Отклонённые",
 };
 
-function statusVariant(
-	status: OrganizerApplication["status"],
-): "default" | "secondary" | "outline" | "destructive" {
-	if (status === "accepted") return "default";
-	if (status === "rejected") return "destructive";
-	return "outline";
+const STATUS_TEXT: Record<TabKey, string> = {
+	pending: "Не рассмотрено",
+	accepted: "Одобрено",
+	rejected: "Отклонено",
+};
+
+function statusClass(status: OrganizerApplication["status"]): string {
+	if (status === "accepted") return "text-emerald-600 dark:text-emerald-400";
+	if (status === "rejected") return "text-destructive";
+	return "text-muted-foreground";
 }
 
 export default function ApplicationsView() {
@@ -72,45 +83,55 @@ export default function ApplicationsView() {
 					</CardContent>
 				</Card>
 			) : filtered.length === 0 ? (
-				<Card>
-					<CardContent className="py-12 text-center text-sm text-muted-foreground">
-						{tab === "pending"
-							? "Новых заявок нет."
-							: tab === "accepted"
-								? "Одобренных заявок ещё нет."
-								: "Отклонённых заявок ещё нет."}
-					</CardContent>
-				</Card>
+				<p className="py-12 text-center text-sm text-muted-foreground">
+					{tab === "pending"
+						? "Новых заявок нет."
+						: tab === "accepted"
+							? "Одобренных заявок ещё нет."
+							: "Отклонённых заявок ещё нет."}
+				</p>
 			) : (
-				<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-					{filtered.map((app) => (
-						<Card key={app.id} className="gap-3">
-							<CardHeader className="gap-2">
-								<div className="flex items-start justify-between gap-2">
-									<CardTitle className="text-base leading-tight">
-										{app.company_data.name}
-									</CardTitle>
-									<Badge variant={statusVariant(app.status)}>
-										{TAB_LABEL[app.status as TabKey]}
-									</Badge>
-								</div>
-								<p className="text-xs text-muted-foreground">
-									Подана {new Date(app.created_at).toLocaleDateString("ru-RU")}
-								</p>
-							</CardHeader>
-							<CardContent className="flex flex-col gap-3 text-sm">
-								<div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-									<span>ИНН: <span className="font-mono text-foreground">{app.company_data.inn}</span></span>
-									<span>ОГРН: <span className="font-mono text-foreground">{app.company_data.ogrn}</span></span>
-								</div>
-								<div className="flex justify-end">
-									<Button variant="outline" size="sm" onClick={() => openReview(app)}>
-										{app.status === "pending" ? "Рассмотреть" : "Открыть"}
-									</Button>
-								</div>
-							</CardContent>
-						</Card>
-					))}
+				<div className="rounded-md border">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Компания</TableHead>
+								<TableHead>ИНН</TableHead>
+								<TableHead>ОГРН</TableHead>
+								<TableHead>Дата подачи</TableHead>
+								<TableHead>Статус</TableHead>
+								<TableHead />
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{filtered.map((app) => (
+								<TableRow key={app.id}>
+									<TableCell className="font-medium">
+										{app.company_data?.name ?? "—"}
+									</TableCell>
+									<TableCell className="font-mono text-xs">
+										{app.company_data?.inn ?? "—"}
+									</TableCell>
+									<TableCell className="font-mono text-xs">
+										{app.company_data?.ogrn ?? "—"}
+									</TableCell>
+									<TableCell className="text-xs text-muted-foreground">
+										{new Date(app.created_at).toLocaleDateString("ru-RU")}
+									</TableCell>
+									<TableCell>
+										<span className={`text-sm ${statusClass(app.status)}`}>
+											{STATUS_TEXT[app.status as TabKey]}
+										</span>
+									</TableCell>
+									<TableCell className="text-right">
+										<Button variant="outline" size="sm" onClick={() => openReview(app)}>
+											{app.status === "pending" ? "Рассмотреть" : "Открыть"}
+										</Button>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
 				</div>
 			)}
 

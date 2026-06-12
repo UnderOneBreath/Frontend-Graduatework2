@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
-import type { LotteryResponse, LotteryStatus } from "@/api/types/lottery.types";
+import { useEffect, useMemo, useState } from "react";
+import type {
+	LotteryResponse,
+	LotteryStatus,
+	TicketResponse,
+} from "@/api/types/lottery.types";
+import { TicketStatus } from "@/api/types/lottery.types";
 import type { CompanyResponse } from "@/api/types/company.types";
-import { getLotteries } from "@/api/services/lottery";
+import { getLotteries, getAllTickets } from "@/api/services/lottery";
 import { getCompanies } from "@/api/services/organizer";
 import { LotteryCard } from "@/components/lottery-card";
 
@@ -46,6 +51,7 @@ export function LotteryList({
 }: LotteryListProps) {
 	const [lotteries, setLotteries] = useState<LotteryResponse[]>([]);
 	const [companies, setCompanies] = useState<Record<string, CompanyResponse>>({});
+	const [tickets, setTickets] = useState<TicketResponse[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -57,11 +63,16 @@ export function LotteryList({
 				console.warn("[LotteryList] companies fetch failed:", err);
 				return [] as CompanyResponse[];
 			}),
+			getAllTickets().catch((err: unknown) => {
+				console.warn("[LotteryList] tickets fetch failed:", err);
+				return [] as TicketResponse[];
+			}),
 		])
-			.then(([lotts, comps]) => {
+			.then(([lotts, comps, tix]) => {
 				setLotteries(lotts);
 				const byId = Object.fromEntries(comps.map((c) => [c.id, c]));
 				setCompanies(byId);
+				setTickets(tix);
 			})
 			.catch((err: unknown) => {
 				console.error("[LotteryList] fetch failed:", err);
@@ -73,6 +84,17 @@ export function LotteryList({
 			})
 			.finally(() => setLoading(false));
 	}, []);
+
+	// Реальные данные по билетам: занято мест и цена билета на каждый розыгрыш.
+	const ticketStats = useMemo(() => {
+		const map: Record<string, { sold: number; price?: number }> = {};
+		for (const t of tickets) {
+			const entry = (map[t.lottery_id] ??= { sold: 0 });
+			if (t.status !== TicketStatus.Vacant) entry.sold += 1;
+			if (entry.price === undefined) entry.price = t.price;
+		}
+		return map;
+	}, [tickets]);
 
 	if (loading) {
 		return (
@@ -122,6 +144,8 @@ export function LotteryList({
 					key={lottery.id}
 					lottery={lottery}
 					companyName={companies[lottery.org_id]?.name}
+					soldCount={ticketStats[lottery.id]?.sold ?? 0}
+					ticketPrice={ticketStats[lottery.id]?.price}
 					onDetails={onLotteryDetails}
 					hideStatus={hideStatus}
 				/>

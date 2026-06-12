@@ -12,7 +12,7 @@ export interface OrganizerApplicationCompany {
 	phone: string;
 	address: string;
 	email: string;
-	logo?: string | null;
+	logo?: any;
 }
 
 export interface ApplicationCreateRequest {
