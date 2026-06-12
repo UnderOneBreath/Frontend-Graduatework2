@@ -52,6 +52,7 @@ jobs:
           TARGET: /srv/staging/
           ARGS: "-rlgoDzv"
           SCRIPT_AFTER: |
+            sudo cp /srv/staging/staging.conf /etc/nginx/conf.d/min-monitoring-staging.conf
             sudo certbot --nginx \
               -d test.min-monitoring.ru \
               --non-interactive --agree-tos \
