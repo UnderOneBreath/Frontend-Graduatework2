@@ -54,11 +54,7 @@ jobs:
           SCRIPT_AFTER: |
             sudo certbot --nginx \
               -d min-monitoring.ru -d www.min-monitoring.ru \
-              -d api.min-monitoring.ru \
-              -d lottery.min-monitoring.ru \
-              -d organizer.min-monitoring.ru \
-              -d notifications.min-monitoring.ru \
               --non-interactive --agree-tos \
-              --force-renewal
+              --force-renewal \
               --register-unsafely-without-email --redirect || true
             sudo nginx -t && sudo systemctl reload nginx
