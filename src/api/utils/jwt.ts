@@ -42,6 +42,13 @@ export function getCurrentRole(): UserRole | null {
 	return raw && isKnownRole(raw) ? raw : null;
 }
 
+export function getTokenExp(): number | null {
+	const raw = localStorage.getItem(TOKEN_EXP_KEY);
+	if (!raw) return null;
+	const exp = Number(raw);
+	return Number.isFinite(exp) ? exp : null;
+}
+
 export function isTokenExpired(): boolean {
 	const raw = localStorage.getItem(TOKEN_EXP_KEY);
 	if (!raw) return true;

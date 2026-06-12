@@ -87,6 +87,40 @@ function unwrap<T>(res: { data: BackendResponse<T> }): T {
 	return res.data.data;
 }
 
+// Backend returns flat fields; map to the nested shape used by components.
+interface RawApplication {
+	id: string;
+	user_id: string;
+	name: string;
+	inn: number;
+	ogrn: number;
+	phone: string;
+	address: string;
+	email: string;
+	logo?: string | null;
+	status: RequestStatus;
+	rejection_reason: string | null;
+	created_at: string;
+}
+
+function toApplication(raw: RawApplication): OrganizerApplication {
+	return {
+		id: raw.id,
+		user_id: raw.user_id,
+		status: raw.status,
+		rejection_reason: raw.rejection_reason,
+		created_at: raw.created_at,
+		company_data: {
+			name: raw.name,
+			inn: raw.inn,
+			ogrn: raw.ogrn,
+			phone: raw.phone,
+			address: raw.address,
+			email: raw.email,
+		},
+	};
+}
+
 export async function listApplications(
 	status?: RequestStatus,
 ): Promise<OrganizerApplication[]> {
@@ -94,10 +128,10 @@ export async function listApplications(
 		const items = seedMock();
 		return status ? items.filter((i) => i.status === status) : [...items];
 	}
-	const res = await apiClient.get<BackendResponse<OrganizerApplication[]>>(
+	const res = await apiClient.get<BackendResponse<RawApplication[]>>(
 		API_ROUTES.requests.list,
 	);
-	const items = unwrap(res);
+	const items = unwrap(res).map(toApplication);
 	return status ? items.filter((i) => i.status === status) : items;
 }
 
@@ -105,10 +139,10 @@ export async function getMyApplications(userId: string): Promise<OrganizerApplic
 	if (USE_MOCK) {
 		return seedMock().filter((i) => i.user_id === userId);
 	}
-	const res = await apiClient.get<BackendResponse<OrganizerApplication[]>>(
+	const res = await apiClient.get<BackendResponse<RawApplication[]>>(
 		API_ROUTES.requests.byUser(userId),
 	);
-	return unwrap(res);
+	return unwrap(res).map(toApplication);
 }
 
 export async function submitApplication(
@@ -127,11 +161,11 @@ export async function submitApplication(
 		items.unshift(app);
 		return app;
 	}
-	const res = await apiClient.post<BackendResponse<OrganizerApplication>>(
+	const res = await apiClient.post<BackendResponse<RawApplication>>(
 		API_ROUTES.requests.list,
 		payload,
 	);
-	return unwrap(res);
+	return toApplication(unwrap(res));
 }
 
 export async function getApplication(id: string): Promise<OrganizerApplication> {
@@ -140,10 +174,10 @@ export async function getApplication(id: string): Promise<OrganizerApplication> 
 		if (!item) throw new Error("Заявка не найдена");
 		return item;
 	}
-	const res = await apiClient.get<BackendResponse<OrganizerApplication>>(
+	const res = await apiClient.get<BackendResponse<RawApplication>>(
 		API_ROUTES.requests.get(id),
 	);
-	return unwrap(res);
+	return toApplication(unwrap(res));
 }
 
 export async function approveApplication(id: string): Promise<OrganizerApplication> {
@@ -155,11 +189,11 @@ export async function approveApplication(id: string): Promise<OrganizerApplicati
 		return item;
 	}
 	const body: ApplicationUpdateRequest = { status: "accepted" };
-	const res = await apiClient.patch<BackendResponse<OrganizerApplication>>(
-		API_ROUTES.requests.get(id),
+	const res = await apiClient.patch<BackendResponse<RawApplication>>(
+		API_ROUTES.requests.changeStatus(id),
 		body,
 	);
-	return unwrap(res);
+	return toApplication(unwrap(res));
 }
 
 export async function rejectApplication(
@@ -177,9 +211,9 @@ export async function rejectApplication(
 		status: "rejected",
 		rejection_reason: reason,
 	};
-	const res = await apiClient.patch<BackendResponse<OrganizerApplication>>(
-		API_ROUTES.requests.get(id),
+	const res = await apiClient.patch<BackendResponse<RawApplication>>(
+		API_ROUTES.requests.changeStatus(id),
 		body,
 	);
-	return unwrap(res);
+	return toApplication(unwrap(res));
 }

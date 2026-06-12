@@ -3,6 +3,7 @@ import {
 	clearTokenInfo,
 	decodeAccessToken,
 	getCurrentUserId,
+	getTokenExp,
 	isTokenExpired,
 	persistTokenInfo,
 } from "@/api/utils/jwt";
@@ -48,11 +49,9 @@ async function refreshNow(): Promise<void> {
 	}
 }
 
-export function scheduleRefreshFromToken(accessToken: string): void {
-	const { exp } = decodeAccessToken(accessToken);
-	if (!exp) return;
+function scheduleRefreshAtExp(expSeconds: number): void {
 	clearTimer();
-	currentExpMs = exp * 1000;
+	currentExpMs = expSeconds * 1000;
 	const delay = currentExpMs - Date.now() - REFRESH_LEEWAY_MS;
 	if (delay <= 0) {
 		void refreshNow();
@@ -60,6 +59,12 @@ export function scheduleRefreshFromToken(accessToken: string): void {
 		timerId = setTimeout(() => void refreshNow(), delay);
 	}
 	ensureVisibilityListener();
+}
+
+export function scheduleRefreshFromToken(accessToken: string): void {
+	const { exp } = decodeAccessToken(accessToken);
+	if (!exp) return;
+	scheduleRefreshAtExp(exp);
 }
 
 export function cancelRefresh(): void {
@@ -73,9 +78,9 @@ export async function bootstrapRefresh(): Promise<void> {
 
 	// Проверяем, истёк ли токен ДО попытки обновить
 	if (!isTokenExpired()) {
-		// Токен ещё валидный, просто запланируем обновление перед истечением
-		const token = localStorage.getItem("accessToken");
-		if (token) scheduleRefreshFromToken(decodeAccessToken(token).sub);
+		// Токен ещё валидный, планируем обновление перед истечением по сохранённому exp
+		const exp = getTokenExp();
+		if (exp !== null) scheduleRefreshAtExp(exp);
 		return;
 	}
 	
