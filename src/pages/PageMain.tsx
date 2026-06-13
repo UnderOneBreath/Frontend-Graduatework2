@@ -224,7 +224,7 @@ export default function PageMain() {
                 <div className="my-5 border-t border-dashed border-border" />
 
                 <p className="mb-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                  Выигрышная № номер билета
+                  Выигрышный № номер билета
                 </p>
                 <TicketDraw />
 
